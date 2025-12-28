@@ -1,0 +1,853 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>測驗系統</title>
+
+<style>
+/* ===== 基本設定（iPhone 必備） ===== */
+html {
+    font-size: 16px;
+}
+
+@media (max-width: 768px) {
+    .quiz-container img {
+        max-height: 35vh;
+    }
+}
+}
+
+body {
+    margin: 0;
+    font-family: "Inter",
+                 -apple-system,
+                 BlinkMacSystemFont,
+                 "Segoe UI",
+                 "Noto Sans TC",
+                 "PingFang TC",
+                 "Microsoft JhengHei",
+                 sans-serif;
+    background: linear-gradient(180deg, #f6f7f9, #eceff3);
+    color: #333;
+    overflow-x: hidden;
+}
+
+/* ===== 共用頁面容器 ===== */
+.page {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+/* ===== 開始 / 重新開始 按鈕 ===== */
+.start-btn,
+.restart-btn {
+    font-size: clamp(1.2rem, 5vw, 1.4rem);
+    padding: 16px 48px;
+    border-radius: 14px;
+    border: none;
+    background: #4f6ef7;
+    color: #fff;
+    cursor: pointer;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+    transition: all 0.2s ease;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.start-btn:hover,
+.restart-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 24px rgba(0,0,0,0.2);
+}
+
+/* ===== 題目卡片 ===== */
+.quiz-container {
+    position: relative;
+    background: #ffffff;
+    border-radius: 20px;
+    padding: clamp(24px, 6vw, 48px);
+    width: 90%;
+    max-width: 900px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+    text-align: center;
+}
+
+/* ===== 題目進度條區域 ===== */
+.progress-wrapper {
+    width: 100%;
+    height: 10px;
+    background: #e6e9ef;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: clamp(20px, 4vw, 32px);
+}
+
+/* 實際進度 */
+.progress-bar {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #4f6ef7, #6f8cff);
+    border-radius: 10px;
+    transition: width 0.4s ease;
+}
+
+/* ===== 題目圖片 ===== */
+.quiz-container img {
+    display: block;
+    max-width: 100%;          /* 不超過卡片寬度 */
+    max-height: 40vh;         /* 垂直方向安全限制 */
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    margin: 0 auto clamp(16px, 4vw, 30px);
+}
+
+/* ===== 題目文字 ===== */
+.question {
+font-family: "Inter", system-ui, sans-serif !important;
+    font-size: clamp(1.1rem, 4vw, 1.3rem);
+    font-weight: 100;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 1px;
+    font-size: clamp(1.4rem, 4.5vw, 1.9rem);
+    line-height: 1.7;
+    font-weight: 600;
+    margin-bottom: 10px;
+}
+
+/* ===== 右下角控制區 ===== */
+.control {
+    position: absolute;
+    bottom: 16px;
+    right: 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* 倒數計時 */
+.timer {
+font-family: "Inter", system-ui, sans-serif !important;
+    font-size: clamp(1.1rem, 4vw, 1.3rem);
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 1px;
+    background: #2d2f36;
+    color: #fff;
+    padding: 10px 16px;
+    border-radius: 10px;
+    font-size: clamp(0.9rem, 3.5vw, 1.1rem);
+    letter-spacing: 1px;
+}
+
+/* 暫停 / 復原按鈕 */
+.control button {
+    border: none;
+    border-radius: 10px;
+    padding: 10px 18px;
+    font-size: 0.95rem;
+    cursor: pointer;
+    background: #e6e9ef;
+    transition: background 0.2s;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.control button:hover {
+    background: #d6dae3;
+}
+
+/* ===== 結果頁 ===== */
+.result {
+    background: #ffffff;
+    border-radius: 20px;
+    padding: clamp(24px, 6vw, 48px);
+    width: 90%;
+    max-width: 800px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+}
+
+.result h2 {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.result ul {
+    padding-left: 20px;
+    font-size: clamp(1.1rem, 4vw, 1.25rem);
+    line-height: 1.9;
+}
+</style>
+</head>
+
+<body>
+
+<!-- 開始頁 -->
+<div class="page" id="startPage">
+    <button class="start-btn" onclick="startQuiz()">開始測試</button>
+</div>
+
+<!-- 測驗頁 -->
+<div class="page" id="quizPage" style="display:none;">
+    <div class="quiz-container">
+        <img id="questionImage">
+        <div class="question" id="questionText"></div>
+
+        
+    </div>
+	<div class="control">
+            <div class="timer" id="timer">剩餘 20 秒</div>
+            <button onclick="togglePause()" id="pauseBtn">暫停</button>
+        </div>
+</div>
+
+<!-- 結果頁 -->
+<div class="page" id="resultPage" style="display:none;">
+    <div class="result">
+        <h2>測驗結束｜正確答案</h2>
+        <ul id="resultList"></ul>
+    </div>
+	<button onclick="restartQuiz()" class="restart-btn">
+        重新測試
+    </button>
+</div>
+
+<script>
+/* 題庫（可自行擴充） */
+const questions = [
+    { img: "https://media.discordapp.net/attachments/1454838383921729598/1454838411541221588/image.png?ex=69528b5a&is=695139da&hm=150671770f67c7d741e7d45353122c5036aff085e60fa56a4f353a94f004687c&=&format=webp&quality=lossless", q: "3-1 請回答 1 是什麼？", a: "眉間" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454838411541221588/image.png?ex=69528b5a&is=695139da&hm=150671770f67c7d741e7d45353122c5036aff085e60fa56a4f353a94f004687c&=&format=webp&quality=lossless", q: "3-1 請回答 2 是什麼？", a: "顳骨" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454838411541221588/image.png?ex=69528b5a&is=695139da&hm=150671770f67c7d741e7d45353122c5036aff085e60fa56a4f353a94f004687c&=&format=webp&quality=lossless", q: "3-1 請回答 3 是什麼？", a: "淚股" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454838411541221588/image.png?ex=69528b5a&is=695139da&hm=150671770f67c7d741e7d45353122c5036aff085e60fa56a4f353a94f004687c&=&format=webp&quality=lossless", q: "3-1 請回答 4 是什麼？", a: "歡股" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454838411541221588/image.png?ex=69528b5a&is=695139da&hm=150671770f67c7d741e7d45353122c5036aff085e60fa56a4f353a94f004687c&=&format=webp&quality=lossless", q: "3-1 請回答 5 是什麼？", a: "眶下裂" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454838411541221588/image.png?ex=69528b5a&is=695139da&hm=150671770f67c7d741e7d45353122c5036aff085e60fa56a4f353a94f004687c&=&format=webp&quality=lossless", q: "3-1 請回答 6 是什麼？", a: "眶下孔" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454838411541221588/image.png?ex=69528b5a&is=695139da&hm=150671770f67c7d741e7d45353122c5036aff085e60fa56a4f353a94f004687c&=&format=webp&quality=lossless", q: "3-1 請回答 7 是什麼？", a: "犁骨" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454838411541221588/image.png?ex=69528b5a&is=695139da&hm=150671770f67c7d741e7d45353122c5036aff085e60fa56a4f353a94f004687c&=&format=webp&quality=lossless", q: "3-1 請回答 8 是什麼？", a: "前鼻棘" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454838411541221588/image.png?ex=69528b5a&is=695139da&hm=150671770f67c7d741e7d45353122c5036aff085e60fa56a4f353a94f004687c&=&format=webp&quality=lossless", q: "3-1 請回答 9 是什麼？", a: "上頜骨" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454838411541221588/image.png?ex=69528b5a&is=695139da&hm=150671770f67c7d741e7d45353122c5036aff085e60fa56a4f353a94f004687c&=&format=webp&quality=lossless", q: "3-1 請回答 10 是什麼？", a: "下頜骨" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454838411541221588/image.png?ex=69528b5a&is=695139da&hm=150671770f67c7d741e7d45353122c5036aff085e60fa56a4f353a94f004687c&=&format=webp&quality=lossless", q: "3-1 請回答 11 是什麼？", a: "額骨" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454838411541221588/image.png?ex=69528b5a&is=695139da&hm=150671770f67c7d741e7d45353122c5036aff085e60fa56a4f353a94f004687c&=&format=webp&quality=lossless", q: "3-1 請回答 12 是什麼？", a: "眶上切迹" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454838411541221588/image.png?ex=69528b5a&is=695139da&hm=150671770f67c7d741e7d45353122c5036aff085e60fa56a4f353a94f004687c&=&format=webp&quality=lossless", q: "3-1 請回答 13 是什麼？", a: "鼻骨" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454838411541221588/image.png?ex=69528b5a&is=695139da&hm=150671770f67c7d741e7d45353122c5036aff085e60fa56a4f353a94f004687c&=&format=webp&quality=lossless", q: "3-1 請回答 14 是什麼？", a: "眶上裂" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454838411541221588/image.png?ex=69528b5a&is=695139da&hm=150671770f67c7d741e7d45353122c5036aff085e60fa56a4f353a94f004687c&=&format=webp&quality=lossless", q: "3-1 請回答 15 是什麼？", a: "蝶骨" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454838411541221588/image.png?ex=69528b5a&is=695139da&hm=150671770f67c7d741e7d45353122c5036aff085e60fa56a4f353a94f004687c&=&format=webp&quality=lossless", q: "3-1 請回答 16 是什麼？", a: "篩骨的垂直板" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454838411541221588/image.png?ex=69528b5a&is=695139da&hm=150671770f67c7d741e7d45353122c5036aff085e60fa56a4f353a94f004687c&=&format=webp&quality=lossless", q: "3-1 請回答 17 是什麼？", a: "下鼻甲" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454838411541221588/image.png?ex=69528b5a&is=695139da&hm=150671770f67c7d741e7d45353122c5036aff085e60fa56a4f353a94f004687c&=&format=webp&quality=lossless", q: "3-1 請回答 18 是什麼？", a: "齒槽緣" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454838411541221588/image.png?ex=69528b5a&is=695139da&hm=150671770f67c7d741e7d45353122c5036aff085e60fa56a4f353a94f004687c&=&format=webp&quality=lossless", q: "3-1 請回答 19 是什麼？", a: "頦孔" },
+	
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454838589970972864/image.png?ex=69528b85&is=69513a05&hm=2822c30a2d755ff2df4a95fb68732739afcb6afc7acd95363fc4483b7179c759&=&format=webp&quality=lossless", q: "3-2 請回答 1 是什麼？", a: "頂骨" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454838589970972864/image.png?ex=69528b85&is=69513a05&hm=2822c30a2d755ff2df4a95fb68732739afcb6afc7acd95363fc4483b7179c759&=&format=webp&quality=lossless", q: "3-2 請回答 2 是什麼？", a: "顳骨" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454838589970972864/image.png?ex=69528b85&is=69513a05&hm=2822c30a2d755ff2df4a95fb68732739afcb6afc7acd95363fc4483b7179c759&=&format=webp&quality=lossless", q: "3-2 請回答 3 是什麼？", a: "縫間骨" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454838589970972864/image.png?ex=69528b85&is=69513a05&hm=2822c30a2d755ff2df4a95fb68732739afcb6afc7acd95363fc4483b7179c759&=&format=webp&quality=lossless", q: "3-2 請回答 4 是什麼？", a: "枕骨" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454838589970972864/image.png?ex=69528b85&is=69513a05&hm=2822c30a2d755ff2df4a95fb68732739afcb6afc7acd95363fc4483b7179c759&=&format=webp&quality=lossless", q: "3-2 請回答 5 是什麼？", a: "下顎骨" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454838589970972864/image.png?ex=69528b85&is=69513a05&hm=2822c30a2d755ff2df4a95fb68732739afcb6afc7acd95363fc4483b7179c759&=&format=webp&quality=lossless", q: "3-2 請回答 6 是什麼？", a: "額骨" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454838589970972864/image.png?ex=69528b85&is=69513a05&hm=2822c30a2d755ff2df4a95fb68732739afcb6afc7acd95363fc4483b7179c759&=&format=webp&quality=lossless", q: "3-2 請回答 7 是什麼？", a: "蝶骨" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454838589970972864/image.png?ex=69528b85&is=69513a05&hm=2822c30a2d755ff2df4a95fb68732739afcb6afc7acd95363fc4483b7179c759&=&format=webp&quality=lossless", q: "3-2 請回答 8 是什麼？", a: "鼻骨" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454838589970972864/image.png?ex=69528b85&is=69513a05&hm=2822c30a2d755ff2df4a95fb68732739afcb6afc7acd95363fc4483b7179c759&=&format=webp&quality=lossless", q: "3-2 請回答 9 是什麼？", a: "淚骨" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454838589970972864/image.png?ex=69528b85&is=69513a05&hm=2822c30a2d755ff2df4a95fb68732739afcb6afc7acd95363fc4483b7179c759&=&format=webp&quality=lossless", q: "3-2 請回答 10 是什麼？", a: "顴骨" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454838589970972864/image.png?ex=69528b85&is=69513a05&hm=2822c30a2d755ff2df4a95fb68732739afcb6afc7acd95363fc4483b7179c759&=&format=webp&quality=lossless", q: "3-2 請回答 11 是什麼？", a: "上顎骨" },
+
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454838688348508308/image.png?ex=69528b9c&is=69513a1c&hm=d223f33d35d58f030c0968c9160e81624c8f69cbc4cbf11cad50bd79c8a0b13e&=&format=webp&quality=lossless", q: "3-3 請回答 1 是什麼？", a: "頂骨" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454838688348508308/image.png?ex=69528b9c&is=69513a1c&hm=d223f33d35d58f030c0968c9160e81624c8f69cbc4cbf11cad50bd79c8a0b13e&=&format=webp&quality=lossless", q: "3-3 請回答 2 是什麼？", a: "人字縫" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454838688348508308/image.png?ex=69528b9c&is=69513a1c&hm=d223f33d35d58f030c0968c9160e81624c8f69cbc4cbf11cad50bd79c8a0b13e&=&format=webp&quality=lossless", q: "3-3 請回答 3 是什麼？", a: "頂骨乳突縫" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454838688348508308/image.png?ex=69528b9c&is=69513a1c&hm=d223f33d35d58f030c0968c9160e81624c8f69cbc4cbf11cad50bd79c8a0b13e&=&format=webp&quality=lossless", q: "3-3 請回答 4 是什麼？", a: "外耳道" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454838688348508308/image.png?ex=69528b9c&is=69513a1c&hm=d223f33d35d58f030c0968c9160e81624c8f69cbc4cbf11cad50bd79c8a0b13e&=&format=webp&quality=lossless", q: "3-3 請回答 5 是什麼？", a: "枕骨乳突縫" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454838688348508308/image.png?ex=69528b9c&is=69513a1c&hm=d223f33d35d58f030c0968c9160e81624c8f69cbc4cbf11cad50bd79c8a0b13e&=&format=webp&quality=lossless", q: "3-3 請回答 6 是什麼？", a: "枕骨外粗隆" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454838688348508308/image.png?ex=69528b9c&is=69513a1c&hm=d223f33d35d58f030c0968c9160e81624c8f69cbc4cbf11cad50bd79c8a0b13e&=&format=webp&quality=lossless", q: "3-3 請回答 7 是什麼？", a: "乳突" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454838688348508308/image.png?ex=69528b9c&is=69513a1c&hm=d223f33d35d58f030c0968c9160e81624c8f69cbc4cbf11cad50bd79c8a0b13e&=&format=webp&quality=lossless", q: "3-3 請回答 8 是什麼？", a: "莖突" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454838688348508308/image.png?ex=69528b9c&is=69513a1c&hm=d223f33d35d58f030c0968c9160e81624c8f69cbc4cbf11cad50bd79c8a0b13e&=&format=webp&quality=lossless", q: "3-3 請回答 9 是什麼？", a: "冠狀縫" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454838688348508308/image.png?ex=69528b9c&is=69513a1c&hm=d223f33d35d58f030c0968c9160e81624c8f69cbc4cbf11cad50bd79c8a0b13e&=&format=webp&quality=lossless", q: "3-3 請回答 10 是什麼？", a: "額骨" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454838688348508308/image.png?ex=69528b9c&is=69513a1c&hm=d223f33d35d58f030c0968c9160e81624c8f69cbc4cbf11cad50bd79c8a0b13e&=&format=webp&quality=lossless", q: "3-3 請回答 11 是什麼？", a: "鱗狀縫" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454838688348508308/image.png?ex=69528b9c&is=69513a1c&hm=d223f33d35d58f030c0968c9160e81624c8f69cbc4cbf11cad50bd79c8a0b13e&=&format=webp&quality=lossless", q: "3-3 請回答 12 是什麼？", a: "蝶骨鱗狀縫" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454838688348508308/image.png?ex=69528b9c&is=69513a1c&hm=d223f33d35d58f030c0968c9160e81624c8f69cbc4cbf11cad50bd79c8a0b13e&=&format=webp&quality=lossless", q: "3-3 請回答 13 是什麼？", a: "淚窩" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454838688348508308/image.png?ex=69528b9c&is=69513a1c&hm=d223f33d35d58f030c0968c9160e81624c8f69cbc4cbf11cad50bd79c8a0b13e&=&format=webp&quality=lossless", q: "3-3 請回答 14 是什麼？", a: "顳突" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454838688348508308/image.png?ex=69528b9c&is=69513a1c&hm=d223f33d35d58f030c0968c9160e81624c8f69cbc4cbf11cad50bd79c8a0b13e&=&format=webp&quality=lossless", q: "3-3 請回答 15 是什麼？", a: "前鼻棘" },
+    { img: "https://media.discordapp.net/attachments/1454838383921729598/1454838688348508308/image.png?ex=69528b9c&is=69513a1c&hm=d223f33d35d58f030c0968c9160e81624c8f69cbc4cbf11cad50bd79c8a0b13e&=&format=webp&quality=lossless", q: "3-3 請回答 16 是什麼？", a: "顴突" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454838688348508308/image.png?ex=69528b9c&is=69513a1c&hm=d223f33d35d58f030c0968c9160e81624c8f69cbc4cbf11cad50bd79c8a0b13e&=&format=webp&quality=lossless", q: "3-3 請回答 17 是什麼？", a: "翼狀突" },
+	
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454839128842698933/image.png?ex=69528c05&is=69513a85&hm=6c0a2b44ea8aef1ff9f0d9794ca2aec73c9f8518ce61c02fbf6f59aeaeef139e&=&format=webp&quality=lossless", q: "3-4 請回答 1 是什麼？", a: "頂骨" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454839128842698933/image.png?ex=69528c05&is=69513a85&hm=6c0a2b44ea8aef1ff9f0d9794ca2aec73c9f8518ce61c02fbf6f59aeaeef139e&=&format=webp&quality=lossless", q: "3-4 請回答 2 是什麼？", a: "縫間骨" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454839128842698933/image.png?ex=69528c05&is=69513a85&hm=6c0a2b44ea8aef1ff9f0d9794ca2aec73c9f8518ce61c02fbf6f59aeaeef139e&=&format=webp&quality=lossless", q: "3-4 請回答 3 是什麼？", a: "枕骨" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454839128842698933/image.png?ex=69528c05&is=69513a85&hm=6c0a2b44ea8aef1ff9f0d9794ca2aec73c9f8518ce61c02fbf6f59aeaeef139e&=&format=webp&quality=lossless", q: "3-4 請回答 4 是什麼？", a: "枕骨乳突縫" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454839128842698933/image.png?ex=69528c05&is=69513a85&hm=6c0a2b44ea8aef1ff9f0d9794ca2aec73c9f8518ce61c02fbf6f59aeaeef139e&=&format=webp&quality=lossless", q: "3-4 請回答 5 是什麼？", a: "上頸線" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454839128842698933/image.png?ex=69528c05&is=69513a85&hm=6c0a2b44ea8aef1ff9f0d9794ca2aec73c9f8518ce61c02fbf6f59aeaeef139e&=&format=webp&quality=lossless", q: "3-4 請回答 6 是什麼？", a: "矢狀縫" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454839128842698933/image.png?ex=69528c05&is=69513a85&hm=6c0a2b44ea8aef1ff9f0d9794ca2aec73c9f8518ce61c02fbf6f59aeaeef139e&=&format=webp&quality=lossless", q: "3-4 請回答 7 是什麼？", a: "人字縫" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454839128842698933/image.png?ex=69528c05&is=69513a85&hm=6c0a2b44ea8aef1ff9f0d9794ca2aec73c9f8518ce61c02fbf6f59aeaeef139e&=&format=webp&quality=lossless", q: "3-4 請回答 8 是什麼？", a: "顳骨" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454839128842698933/image.png?ex=69528c05&is=69513a85&hm=6c0a2b44ea8aef1ff9f0d9794ca2aec73c9f8518ce61c02fbf6f59aeaeef139e&=&format=webp&quality=lossless", q: "3-4 請回答 9 是什麼？", a: "枕骨外粗隆" },
+	
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454839197004464383/image.png?ex=69528c16&is=69513a96&hm=4b345c9a8dd20c9ba3427d9118526e432f785dd11c6624ad4ba19ff7f3e33398&=&format=webp&quality=lossless", q: "3-5 請回答 1 是什麼？", a: "額骨" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454839197004464383/image.png?ex=69528c16&is=69513a96&hm=4b345c9a8dd20c9ba3427d9118526e432f785dd11c6624ad4ba19ff7f3e33398&=&format=webp&quality=lossless", q: "3-5 請回答 2 是什麼？", a: "頂骨" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454839197004464383/image.png?ex=69528c16&is=69513a96&hm=4b345c9a8dd20c9ba3427d9118526e432f785dd11c6624ad4ba19ff7f3e33398&=&format=webp&quality=lossless", q: "3-5 請回答 3 是什麼？", a: "縫間骨" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454839197004464383/image.png?ex=69528c16&is=69513a96&hm=4b345c9a8dd20c9ba3427d9118526e432f785dd11c6624ad4ba19ff7f3e33398&=&format=webp&quality=lossless", q: "3-5 請回答 4 是什麼？", a: "冠狀縫" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454839197004464383/image.png?ex=69528c16&is=69513a96&hm=4b345c9a8dd20c9ba3427d9118526e432f785dd11c6624ad4ba19ff7f3e33398&=&format=webp&quality=lossless", q: "3-5 請回答 5 是什麼？", a: "矢狀縫" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454839197004464383/image.png?ex=69528c16&is=69513a96&hm=4b345c9a8dd20c9ba3427d9118526e432f785dd11c6624ad4ba19ff7f3e33398&=&format=webp&quality=lossless", q: "3-5 請回答 6 是什麼？", a: "人字縫" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454839197004464383/image.png?ex=69528c16&is=69513a96&hm=4b345c9a8dd20c9ba3427d9118526e432f785dd11c6624ad4ba19ff7f3e33398&=&format=webp&quality=lossless", q: "3-5 請回答 7 是什麼？", a: "枕骨" },
+	
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454839325907882014/image.png?ex=69528c34&is=69513ab4&hm=c39cf031f23e13f6284dae7a6c900a7b9f4d8db3bfac11b7c4d575ecb5684e66&=&format=webp&quality=lossless", q: "3-24 請回答 1 是什麼？", a: "頂骨" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454839325907882014/image.png?ex=69528c34&is=69513ab4&hm=c39cf031f23e13f6284dae7a6c900a7b9f4d8db3bfac11b7c4d575ecb5684e66&=&format=webp&quality=lossless", q: "3-24 請回答 2 是什麼？", a: "蝶鞍" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454839325907882014/image.png?ex=69528c34&is=69513ab4&hm=c39cf031f23e13f6284dae7a6c900a7b9f4d8db3bfac11b7c4d575ecb5684e66&=&format=webp&quality=lossless", q: "3-24 請回答 3 是什麼？", a: "顳骨" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454839325907882014/image.png?ex=69528c34&is=69513ab4&hm=c39cf031f23e13f6284dae7a6c900a7b9f4d8db3bfac11b7c4d575ecb5684e66&=&format=webp&quality=lossless", q: "3-24 請回答 4 是什麼？", a: "枕骨" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454839325907882014/image.png?ex=69528c34&is=69513ab4&hm=c39cf031f23e13f6284dae7a6c900a7b9f4d8db3bfac11b7c4d575ecb5684e66&=&format=webp&quality=lossless", q: "3-24 請回答 5 是什麼？", a: "枕骨髁" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454839325907882014/image.png?ex=69528c34&is=69513ab4&hm=c39cf031f23e13f6284dae7a6c900a7b9f4d8db3bfac11b7c4d575ecb5684e66&=&format=webp&quality=lossless", q: "3-24 請回答 6 是什麼？", a: "額骨" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454839325907882014/image.png?ex=69528c34&is=69513ab4&hm=c39cf031f23e13f6284dae7a6c900a7b9f4d8db3bfac11b7c4d575ecb5684e66&=&format=webp&quality=lossless", q: "3-24 請回答 7 是什麼？", a: "額竇" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454839325907882014/image.png?ex=69528c34&is=69513ab4&hm=c39cf031f23e13f6284dae7a6c900a7b9f4d8db3bfac11b7c4d575ecb5684e66&=&format=webp&quality=lossless", q: "3-24 請回答 8 是什麼？", a: "蝶竇" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454839325907882014/image.png?ex=69528c34&is=69513ab4&hm=c39cf031f23e13f6284dae7a6c900a7b9f4d8db3bfac11b7c4d575ecb5684e66&=&format=webp&quality=lossless", q: "3-24 請回答 9 是什麼？", a: "篩骨" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454839325907882014/image.png?ex=69528c34&is=69513ab4&hm=c39cf031f23e13f6284dae7a6c900a7b9f4d8db3bfac11b7c4d575ecb5684e66&=&format=webp&quality=lossless", q: "3-24 請回答 10 是什麼？", a: "犁骨" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454839325907882014/image.png?ex=69528c34&is=69513ab4&hm=c39cf031f23e13f6284dae7a6c900a7b9f4d8db3bfac11b7c4d575ecb5684e66&=&format=webp&quality=lossless", q: "3-24 請回答 11 是什麼？", a: "翼狀突" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454839325907882014/image.png?ex=69528c34&is=69513ab4&hm=c39cf031f23e13f6284dae7a6c900a7b9f4d8db3bfac11b7c4d575ecb5684e66&=&format=webp&quality=lossless", q: "3-24 請回答 12 是什麼？", a: "下頜骨" },
+	
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454839640136618015/image.png?ex=69528c7f&is=69513aff&hm=7b1cb83d31dfd2adbac3ea2134ebc86a774bc708aa4fe07448abaef0f6e6dec1&=&format=webp&quality=lossless", q: "3-7 請回答 1 是什麼？", a: "篩板的嗅神經孔" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454839640136618015/image.png?ex=69528c7f&is=69513aff&hm=7b1cb83d31dfd2adbac3ea2134ebc86a774bc708aa4fe07448abaef0f6e6dec1&=&format=webp&quality=lossless", q: "3-7 請回答 2 是什麼？", a: "視神經管／孔" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454839640136618015/image.png?ex=69528c7f&is=69513aff&hm=7b1cb83d31dfd2adbac3ea2134ebc86a774bc708aa4fe07448abaef0f6e6dec1&=&format=webp&quality=lossless", q: "3-7 請回答 3 是什麼？", a: "棘孔" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454839640136618015/image.png?ex=69528c7f&is=69513aff&hm=7b1cb83d31dfd2adbac3ea2134ebc86a774bc708aa4fe07448abaef0f6e6dec1&=&format=webp&quality=lossless", q: "3-7 請回答 4 是什麼？", a: "頸動脈管／孔" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454839640136618015/image.png?ex=69528c7f&is=69513aff&hm=7b1cb83d31dfd2adbac3ea2134ebc86a774bc708aa4fe07448abaef0f6e6dec1&=&format=webp&quality=lossless", q: "3-7 請回答 5 是什麼？", a: "枕骨大孔" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454839640136618015/image.png?ex=69528c7f&is=69513aff&hm=7b1cb83d31dfd2adbac3ea2134ebc86a774bc708aa4fe07448abaef0f6e6dec1&=&format=webp&quality=lossless", q: "3-7 請回答 6 是什麼？", a: "枕骨" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454839640136618015/image.png?ex=69528c7f&is=69513aff&hm=7b1cb83d31dfd2adbac3ea2134ebc86a774bc708aa4fe07448abaef0f6e6dec1&=&format=webp&quality=lossless", q: "3-7 請回答 7 是什麼？", a: "額骨" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454839640136618015/image.png?ex=69528c7f&is=69513aff&hm=7b1cb83d31dfd2adbac3ea2134ebc86a774bc708aa4fe07448abaef0f6e6dec1&=&format=webp&quality=lossless", q: "3-7 請回答 8 是什麼？", a: "雞冠" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454839640136618015/image.png?ex=69528c7f&is=69513aff&hm=7b1cb83d31dfd2adbac3ea2134ebc86a774bc708aa4fe07448abaef0f6e6dec1&=&format=webp&quality=lossless", q: "3-7 請回答 9 是什麼？", a: "蝶骨" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454839640136618015/image.png?ex=69528c7f&is=69513aff&hm=7b1cb83d31dfd2adbac3ea2134ebc86a774bc708aa4fe07448abaef0f6e6dec1&=&format=webp&quality=lossless", q: "3-7 請回答 10 是什麼？", a: "卵圓孔" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454839640136618015/image.png?ex=69528c7f&is=69513aff&hm=7b1cb83d31dfd2adbac3ea2134ebc86a774bc708aa4fe07448abaef0f6e6dec1&=&format=webp&quality=lossless", q: "3-7 請回答 11 是什麼？", a: "破裂孔" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454839640136618015/image.png?ex=69528c7f&is=69513aff&hm=7b1cb83d31dfd2adbac3ea2134ebc86a774bc708aa4fe07448abaef0f6e6dec1&=&format=webp&quality=lossless", q: "3-7 請回答 12 是什麼？", a: "顳骨" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454839640136618015/image.png?ex=69528c7f&is=69513aff&hm=7b1cb83d31dfd2adbac3ea2134ebc86a774bc708aa4fe07448abaef0f6e6dec1&=&format=webp&quality=lossless", q: "3-7 請回答 13 是什麼？", a: "頸靜脈孔" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454839640136618015/image.png?ex=69528c7f&is=69513aff&hm=7b1cb83d31dfd2adbac3ea2134ebc86a774bc708aa4fe07448abaef0f6e6dec1&=&format=webp&quality=lossless", q: "3-7 請回答 14 是什麼？", a: "頂骨" },
+	
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454839791471431974/image.png?ex=69528ca3&is=69513b23&hm=f10d12b35741562ed5fbb15abbce4041c8340594464c0cc96e3edc18b36221ae&=&format=webp&quality=lossless", q: "3-19 請回答 1 是什麼？", a: "下頜髁" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454839791471431974/image.png?ex=69528ca3&is=69513b23&hm=f10d12b35741562ed5fbb15abbce4041c8340594464c0cc96e3edc18b36221ae&=&format=webp&quality=lossless", q: "3-19 請回答 2 是什麼？", a: "下頜孔" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454839791471431974/image.png?ex=69528ca3&is=69513b23&hm=f10d12b35741562ed5fbb15abbce4041c8340594464c0cc96e3edc18b36221ae&=&format=webp&quality=lossless", q: "3-19 請回答 3 是什麼？", a: "下頜切迹" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454839791471431974/image.png?ex=69528ca3&is=69513b23&hm=f10d12b35741562ed5fbb15abbce4041c8340594464c0cc96e3edc18b36221ae&=&format=webp&quality=lossless", q: "3-19 請回答 4 是什麼？", a: "下頜枝" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454839791471431974/image.png?ex=69528ca3&is=69513b23&hm=f10d12b35741562ed5fbb15abbce4041c8340594464c0cc96e3edc18b36221ae&=&format=webp&quality=lossless", q: "3-19 請回答 5 是什麼？", a: "下頜角" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454839791471431974/image.png?ex=69528ca3&is=69513b23&hm=f10d12b35741562ed5fbb15abbce4041c8340594464c0cc96e3edc18b36221ae&=&format=webp&quality=lossless", q: "3-19 請回答 6 是什麼？", a: "冠狀突" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454839791471431974/image.png?ex=69528ca3&is=69513b23&hm=f10d12b35741562ed5fbb15abbce4041c8340594464c0cc96e3edc18b36221ae&=&format=webp&quality=lossless", q: "3-19 請回答 7 是什麼？", a: "齒槽緣" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454839791471431974/image.png?ex=69528ca3&is=69513b23&hm=f10d12b35741562ed5fbb15abbce4041c8340594464c0cc96e3edc18b36221ae&=&format=webp&quality=lossless", q: "3-19 請回答 8 是什麼？", a: "頦粗隆" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454839791471431974/image.png?ex=69528ca3&is=69513b23&hm=f10d12b35741562ed5fbb15abbce4041c8340594464c0cc96e3edc18b36221ae&=&format=webp&quality=lossless", q: "3-19 請回答 9 是什麼？", a: "頦孔" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454839791471431974/image.png?ex=69528ca3&is=69513b23&hm=f10d12b35741562ed5fbb15abbce4041c8340594464c0cc96e3edc18b36221ae&=&format=webp&quality=lossless", q: "3-19 請回答 9 是什麼？", a: "（下頜）體" },
+	
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454839919976644740/image.png?ex=69528cc2&is=69513b42&hm=a8ff33593d05245bcb723402dee6b4630a6abfce5e168902513d16daa8530816&=&format=webp&quality=lossless", q: "3-23 請回答 1 是什麼？", a: "額骨" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454839919976644740/image.png?ex=69528cc2&is=69513b42&hm=a8ff33593d05245bcb723402dee6b4630a6abfce5e168902513d16daa8530816&=&format=webp&quality=lossless", q: "3-23 請回答 2 是什麼？", a: "篩骨" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454839919976644740/image.png?ex=69528cc2&is=69513b42&hm=a8ff33593d05245bcb723402dee6b4630a6abfce5e168902513d16daa8530816&=&format=webp&quality=lossless", q: "3-23 請回答 3 是什麼？", a: "淚骨" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454839919976644740/image.png?ex=69528cc2&is=69513b42&hm=a8ff33593d05245bcb723402dee6b4630a6abfce5e168902513d16daa8530816&=&format=webp&quality=lossless", q: "3-23 請回答 4 是什麼？", a: "腭骨" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454839919976644740/image.png?ex=69528cc2&is=69513b42&hm=a8ff33593d05245bcb723402dee6b4630a6abfce5e168902513d16daa8530816&=&format=webp&quality=lossless", q: "3-23 請回答 5 是什麼？", a: "上頜骨" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454839919976644740/image.png?ex=69528cc2&is=69513b42&hm=a8ff33593d05245bcb723402dee6b4630a6abfce5e168902513d16daa8530816&=&format=webp&quality=lossless", q: "3-23 請回答 6 是什麼？", a: "蝶骨" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454839919976644740/image.png?ex=69528cc2&is=69513b42&hm=a8ff33593d05245bcb723402dee6b4630a6abfce5e168902513d16daa8530816&=&format=webp&quality=lossless", q: "3-23 請回答 7 是什麼？", a: "顴骨" },
+	
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454840000033067149/image.png?ex=69528cd5&is=69513b55&hm=8def84a4fcc03aa2e88d823ce4988fc6f2ffd10acdb4f5de4544973a50981170&=&format=webp&quality=lossless", q: "3-30 請回答 1 是什麼？", a: "椎孔" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454840000033067149/image.png?ex=69528cd5&is=69513b55&hm=8def84a4fcc03aa2e88d823ce4988fc6f2ffd10acdb4f5de4544973a50981170&=&format=webp&quality=lossless", q: "3-30 請回答 2 是什麼？", a: "椎弓根" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454840000033067149/image.png?ex=69528cd5&is=69513b55&hm=8def84a4fcc03aa2e88d823ce4988fc6f2ffd10acdb4f5de4544973a50981170&=&format=webp&quality=lossless", q: "3-30 請回答 3 是什麼？", a: "橫突" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454840000033067149/image.png?ex=69528cd5&is=69513b55&hm=8def84a4fcc03aa2e88d823ce4988fc6f2ffd10acdb4f5de4544973a50981170&=&format=webp&quality=lossless", q: "3-30 請回答 4 是什麼？", a: "棘突" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454840000033067149/image.png?ex=69528cd5&is=69513b55&hm=8def84a4fcc03aa2e88d823ce4988fc6f2ffd10acdb4f5de4544973a50981170&=&format=webp&quality=lossless", q: "3-30 請回答 5 是什麼？", a: "椎弓板" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454840000033067149/image.png?ex=69528cd5&is=69513b55&hm=8def84a4fcc03aa2e88d823ce4988fc6f2ffd10acdb4f5de4544973a50981170&=&format=webp&quality=lossless", q: "3-30 請回答 6 是什麼？", a: "下關節突" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454840000033067149/image.png?ex=69528cd5&is=69513b55&hm=8def84a4fcc03aa2e88d823ce4988fc6f2ffd10acdb4f5de4544973a50981170&=&format=webp&quality=lossless", q: "3-30 請回答 7 是什麼？", a: "上關節小面" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454840000033067149/image.png?ex=69528cd5&is=69513b55&hm=8def84a4fcc03aa2e88d823ce4988fc6f2ffd10acdb4f5de4544973a50981170&=&format=webp&quality=lossless", q: "3-30 請回答 8 是什麼？", a: "齒突" },
+	
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454840106014998713/image.png?ex=69528cee&is=69513b6e&hm=d2bcb4adfadf221a777266d1c2f45d0999980b29a6981b434959087f12428e8e&=&format=webp&quality=lossless", q: "3-21 請回答 1 是什麼？", a: "額突" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454840106014998713/image.png?ex=69528cee&is=69513b6e&hm=d2bcb4adfadf221a777266d1c2f45d0999980b29a6981b434959087f12428e8e&=&format=webp&quality=lossless", q: "3-21 請回答 2 是什麼？", a: "淚溝" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454840106014998713/image.png?ex=69528cee&is=69513b6e&hm=d2bcb4adfadf221a777266d1c2f45d0999980b29a6981b434959087f12428e8e&=&format=webp&quality=lossless", q: "3-21 請回答 3 是什麼？", a: "前鼻棘" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454840106014998713/image.png?ex=69528cee&is=69513b6e&hm=d2bcb4adfadf221a777266d1c2f45d0999980b29a6981b434959087f12428e8e&=&format=webp&quality=lossless", q: "3-21 請回答 4 是什麼？", a: "門齒管" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454840106014998713/image.png?ex=69528cee&is=69513b6e&hm=d2bcb4adfadf221a777266d1c2f45d0999980b29a6981b434959087f12428e8e&=&format=webp&quality=lossless", q: "3-21 請回答 5 是什麼？", a: "上頜竇" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454840106014998713/image.png?ex=69528cee&is=69513b6e&hm=d2bcb4adfadf221a777266d1c2f45d0999980b29a6981b434959087f12428e8e&=&format=webp&quality=lossless", q: "3-21 請回答 6 是什麼？", a: "腭突" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454840106014998713/image.png?ex=69528cee&is=69513b6e&hm=d2bcb4adfadf221a777266d1c2f45d0999980b29a6981b434959087f12428e8e&=&format=webp&quality=lossless", q: "3-21 請回答 7 是什麼？", a: "齒槽緣" },
+	
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454840274189815982/image.png?ex=69528d16&is=69513b96&hm=ec70067ef15f41ea9e9563f4c9c4bcaac7b0177ac99c28af870230d3a7faf89f&=&format=webp&quality=lossless", q: "3-8 請回答 1 是什麼？", a: "門齒窩" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454840274189815982/image.png?ex=69528d16&is=69513b96&hm=ec70067ef15f41ea9e9563f4c9c4bcaac7b0177ac99c28af870230d3a7faf89f&=&format=webp&quality=lossless", q: "3-8 請回答 2 是什麼？", a: "上頜骨" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454840274189815982/image.png?ex=69528d16&is=69513b96&hm=ec70067ef15f41ea9e9563f4c9c4bcaac7b0177ac99c28af870230d3a7faf89f&=&format=webp&quality=lossless", q: "3-8 請回答 3 是什麼？", a: "大腭孔" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454840274189815982/image.png?ex=69528d16&is=69513b96&hm=ec70067ef15f41ea9e9563f4c9c4bcaac7b0177ac99c28af870230d3a7faf89f&=&format=webp&quality=lossless", q: "3-8 請回答 4 是什麼？", a: "腭骨" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454840274189815982/image.png?ex=69528d16&is=69513b96&hm=ec70067ef15f41ea9e9563f4c9c4bcaac7b0177ac99c28af870230d3a7faf89f&=&format=webp&quality=lossless", q: "3-8 請回答 5 是什麼？", a: "犁骨" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454840274189815982/image.png?ex=69528d16&is=69513b96&hm=ec70067ef15f41ea9e9563f4c9c4bcaac7b0177ac99c28af870230d3a7faf89f&=&format=webp&quality=lossless", q: "3-8 請回答 6 是什麼？", a: "卵圓孔" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454840274189815982/image.png?ex=69528d16&is=69513b96&hm=ec70067ef15f41ea9e9563f4c9c4bcaac7b0177ac99c28af870230d3a7faf89f&=&format=webp&quality=lossless", q: "3-8 請回答 7 是什麼？", a: "破裂孔" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454840274189815982/image.png?ex=69528d16&is=69513b96&hm=ec70067ef15f41ea9e9563f4c9c4bcaac7b0177ac99c28af870230d3a7faf89f&=&format=webp&quality=lossless", q: "3-8 請回答 8 是什麼？", a: "莖突" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454840274189815982/image.png?ex=69528d16&is=69513b96&hm=ec70067ef15f41ea9e9563f4c9c4bcaac7b0177ac99c28af870230d3a7faf89f&=&format=webp&quality=lossless", q: "3-8 請回答 9 是什麼？", a: "頸靜脈孔" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454840274189815982/image.png?ex=69528d16&is=69513b96&hm=ec70067ef15f41ea9e9563f4c9c4bcaac7b0177ac99c28af870230d3a7faf89f&=&format=webp&quality=lossless", q: "3-8 請回答 10 是什麼？", a: "枕骨髁" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454840274189815982/image.png?ex=69528d16&is=69513b96&hm=ec70067ef15f41ea9e9563f4c9c4bcaac7b0177ac99c28af870230d3a7faf89f&=&format=webp&quality=lossless", q: "3-8 請回答 11 是什麼？", a: "枕骨大孔" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454840274189815982/image.png?ex=69528d16&is=69513b96&hm=ec70067ef15f41ea9e9563f4c9c4bcaac7b0177ac99c28af870230d3a7faf89f&=&format=webp&quality=lossless", q: "3-8 請回答 12 是什麼？", a: "枕骨外粗隆" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454840274189815982/image.png?ex=69528d16&is=69513b96&hm=ec70067ef15f41ea9e9563f4c9c4bcaac7b0177ac99c28af870230d3a7faf89f&=&format=webp&quality=lossless", q: "3-8 請回答 13 是什麼？", a: "門齒" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454840274189815982/image.png?ex=69528d16&is=69513b96&hm=ec70067ef15f41ea9e9563f4c9c4bcaac7b0177ac99c28af870230d3a7faf89f&=&format=webp&quality=lossless", q: "3-8 請回答 14 是什麼？", a: "犬齒" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454840274189815982/image.png?ex=69528d16&is=69513b96&hm=ec70067ef15f41ea9e9563f4c9c4bcaac7b0177ac99c28af870230d3a7faf89f&=&format=webp&quality=lossless", q: "3-8 請回答 15 是什麼？", a: "前臼齒" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454840274189815982/image.png?ex=69528d16&is=69513b96&hm=ec70067ef15f41ea9e9563f4c9c4bcaac7b0177ac99c28af870230d3a7faf89f&=&format=webp&quality=lossless", q: "3-8 請回答 16 是什麼？", a: "臼齒" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454840274189815982/image.png?ex=69528d16&is=69513b96&hm=ec70067ef15f41ea9e9563f4c9c4bcaac7b0177ac99c28af870230d3a7faf89f&=&format=webp&quality=lossless", q: "3-8 請回答 17 是什麼？", a: "顴骨弓" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454840274189815982/image.png?ex=69528d16&is=69513b96&hm=ec70067ef15f41ea9e9563f4c9c4bcaac7b0177ac99c28af870230d3a7faf89f&=&format=webp&quality=lossless", q: "3-8 請回答 18 是什麼？", a: "翼狀突" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454840274189815982/image.png?ex=69528d16&is=69513b96&hm=ec70067ef15f41ea9e9563f4c9c4bcaac7b0177ac99c28af870230d3a7faf89f&=&format=webp&quality=lossless", q: "3-8 請回答 19 是什麼？", a: "棘孔" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454840274189815982/image.png?ex=69528d16&is=69513b96&hm=ec70067ef15f41ea9e9563f4c9c4bcaac7b0177ac99c28af870230d3a7faf89f&=&format=webp&quality=lossless", q: "3-8 請回答 20 是什麼？", a: "下頜窩" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454840274189815982/image.png?ex=69528d16&is=69513b96&hm=ec70067ef15f41ea9e9563f4c9c4bcaac7b0177ac99c28af870230d3a7faf89f&=&format=webp&quality=lossless", q: "3-8 請回答 21 是什麼？", a: "頸動脈管／孔" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454840274189815982/image.png?ex=69528d16&is=69513b96&hm=ec70067ef15f41ea9e9563f4c9c4bcaac7b0177ac99c28af870230d3a7faf89f&=&format=webp&quality=lossless", q: "3-8 請回答 22 是什麼？", a: "莖乳突孔" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454840274189815982/image.png?ex=69528d16&is=69513b96&hm=ec70067ef15f41ea9e9563f4c9c4bcaac7b0177ac99c28af870230d3a7faf89f&=&format=webp&quality=lossless", q: "3-8 請回答 23 是什麼？", a: "乳突" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454840274189815982/image.png?ex=69528d16&is=69513b96&hm=ec70067ef15f41ea9e9563f4c9c4bcaac7b0177ac99c28af870230d3a7faf89f&=&format=webp&quality=lossless", q: "3-8 請回答 24 是什麼？", a: "下頸線" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454840274189815982/image.png?ex=69528d16&is=69513b96&hm=ec70067ef15f41ea9e9563f4c9c4bcaac7b0177ac99c28af870230d3a7faf89f&=&format=webp&quality=lossless", q: "3-8 請回答 25 是什麼？", a: "上頸線" },
+	
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454840433904713819/image.png?ex=69528d3d&is=69513bbd&hm=6d7067c665a00329b6d0ed122d54607447298107c6de2ec578b0df06639b97c0&=&format=webp&quality=lossless", q: "3-28 請回答 1 是什麼？", a: "後弓" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454840433904713819/image.png?ex=69528d3d&is=69513bbd&hm=6d7067c665a00329b6d0ed122d54607447298107c6de2ec578b0df06639b97c0&=&format=webp&quality=lossless", q: "3-28 請回答 2 是什麼？", a: "橫突" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454840433904713819/image.png?ex=69528d3d&is=69513bbd&hm=6d7067c665a00329b6d0ed122d54607447298107c6de2ec578b0df06639b97c0&=&format=webp&quality=lossless", q: "3-28 請回答 3 是什麼？", a: "上關節小面" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454840433904713819/image.png?ex=69528d3d&is=69513bbd&hm=6d7067c665a00329b6d0ed122d54607447298107c6de2ec578b0df06639b97c0&=&format=webp&quality=lossless", q: "3-28 請回答 4 是什麼？", a: "前弓" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454840433904713819/image.png?ex=69528d3d&is=69513bbd&hm=6d7067c665a00329b6d0ed122d54607447298107c6de2ec578b0df06639b97c0&=&format=webp&quality=lossless", q: "3-28 請回答 5 是什麼？", a: "外側塊" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454840433904713819/image.png?ex=69528d3d&is=69513bbd&hm=6d7067c665a00329b6d0ed122d54607447298107c6de2ec578b0df06639b97c0&=&format=webp&quality=lossless", q: "3-28 請回答 6 是什麼？", a: "橫突孔" },
+	
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454840538388893858/image.png?ex=69528d55&is=69513bd5&hm=d5af720c9acd8b335bb0a99db78f9b7e71ac315dd526e0ff4d23d2acfb10e7e3&=&format=webp&quality=lossless", q: "3-26 請回答 1 是什麼？", a: "棘突" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454840538388893858/image.png?ex=69528d55&is=69513bd5&hm=d5af720c9acd8b335bb0a99db78f9b7e71ac315dd526e0ff4d23d2acfb10e7e3&=&format=webp&quality=lossless", q: "3-26 請回答 2 是什麼？", a: "椎間孔" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454840538388893858/image.png?ex=69528d55&is=69513bd5&hm=d5af720c9acd8b335bb0a99db78f9b7e71ac315dd526e0ff4d23d2acfb10e7e3&=&format=webp&quality=lossless", q: "3-26 請回答 3 是什麼？", a: "椎間盤" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454840538388893858/image.png?ex=69528d55&is=69513bd5&hm=d5af720c9acd8b335bb0a99db78f9b7e71ac315dd526e0ff4d23d2acfb10e7e3&=&format=webp&quality=lossless", q: "3-26 請回答 4 是什麼？", a: "薦椎與薦／骶部彎曲" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454840538388893858/image.png?ex=69528d55&is=69513bd5&hm=d5af720c9acd8b335bb0a99db78f9b7e71ac315dd526e0ff4d23d2acfb10e7e3&=&format=webp&quality=lossless", q: "3-26 請回答 5 是什麼？", a: "頸椎與頸部彎曲" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454840538388893858/image.png?ex=69528d55&is=69513bd5&hm=d5af720c9acd8b335bb0a99db78f9b7e71ac315dd526e0ff4d23d2acfb10e7e3&=&format=webp&quality=lossless", q: "3-26 請回答 6 是什麼？", a: "胸椎與胸部彎曲" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454840538388893858/image.png?ex=69528d55&is=69513bd5&hm=d5af720c9acd8b335bb0a99db78f9b7e71ac315dd526e0ff4d23d2acfb10e7e3&=&format=webp&quality=lossless", q: "3-26 請回答 7 是什麼？", a: "腰椎與腰部彎曲" },
+	
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454840675513143491/image.png?ex=69528d76&is=69513bf6&hm=0e68e2fefb49a89ed1a2d728a9cb85eea56bc460d2cc55d7f33574d8b37a498a&=&format=webp&quality=lossless", q: "3-42 請回答 1 是什麼？", a: "頸靜脈切迹" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454840675513143491/image.png?ex=69528d76&is=69513bf6&hm=0e68e2fefb49a89ed1a2d728a9cb85eea56bc460d2cc55d7f33574d8b37a498a&=&format=webp&quality=lossless", q: "3-42 請回答 2 是什麼？", a: "鎖骨切迹" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454840675513143491/image.png?ex=69528d76&is=69513bf6&hm=0e68e2fefb49a89ed1a2d728a9cb85eea56bc460d2cc55d7f33574d8b37a498a&=&format=webp&quality=lossless", q: "3-42 請回答 3 是什麼？", a: "（胸骨）柄" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454840675513143491/image.png?ex=69528d76&is=69513bf6&hm=0e68e2fefb49a89ed1a2d728a9cb85eea56bc460d2cc55d7f33574d8b37a498a&=&format=webp&quality=lossless", q: "3-42 請回答 4 是什麼？", a: "胸骨角" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454840675513143491/image.png?ex=69528d76&is=69513bf6&hm=0e68e2fefb49a89ed1a2d728a9cb85eea56bc460d2cc55d7f33574d8b37a498a&=&format=webp&quality=lossless", q: "3-42 請回答 5 是什麼？", a: "（胸骨）體" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454840675513143491/image.png?ex=69528d76&is=69513bf6&hm=0e68e2fefb49a89ed1a2d728a9cb85eea56bc460d2cc55d7f33574d8b37a498a&=&format=webp&quality=lossless", q: "3-42 請回答 6 是什麼？", a: "劍突" },
+	
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454840779758370918/image.png?ex=69528d8f&is=69513c0f&hm=d0a4c39c4698da49ddd009543cc43589b808f87cca095a9d1167119efe27ae6d&=&format=webp&quality=lossless", q: "3-46 請回答 1 是什麼？", a: "肩峰" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454840779758370918/image.png?ex=69528d8f&is=69513c0f&hm=d0a4c39c4698da49ddd009543cc43589b808f87cca095a9d1167119efe27ae6d&=&format=webp&quality=lossless", q: "3-46 請回答 2 是什麼？", a: "肩峰鎖骨關節" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454840779758370918/image.png?ex=69528d8f&is=69513c0f&hm=d0a4c39c4698da49ddd009543cc43589b808f87cca095a9d1167119efe27ae6d&=&format=webp&quality=lossless", q: "3-46 請回答 3 是什麼？", a: "鎖骨肩峰端" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454840779758370918/image.png?ex=69528d8f&is=69513c0f&hm=d0a4c39c4698da49ddd009543cc43589b808f87cca095a9d1167119efe27ae6d&=&format=webp&quality=lossless", q: "3-46 請回答 4 是什麼？", a: "喙狀突" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454840779758370918/image.png?ex=69528d8f&is=69513c0f&hm=d0a4c39c4698da49ddd009543cc43589b808f87cca095a9d1167119efe27ae6d&=&format=webp&quality=lossless", q: "3-46 請回答 5 是什麼？", a: "（肩胛）棘" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454840779758370918/image.png?ex=69528d8f&is=69513c0f&hm=d0a4c39c4698da49ddd009543cc43589b808f87cca095a9d1167119efe27ae6d&=&format=webp&quality=lossless", q: "3-46 請回答 6 是什麼？", a: "棘上窩" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454840779758370918/image.png?ex=69528d8f&is=69513c0f&hm=d0a4c39c4698da49ddd009543cc43589b808f87cca095a9d1167119efe27ae6d&=&format=webp&quality=lossless", q: "3-46 請回答 7 是什麼？", a: "肩胛下窩" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454840779758370918/image.png?ex=69528d8f&is=69513c0f&hm=d0a4c39c4698da49ddd009543cc43589b808f87cca095a9d1167119efe27ae6d&=&format=webp&quality=lossless", q: "3-46 請回答 8 是什麼？", a: "鎖骨幹" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454840779758370918/image.png?ex=69528d8f&is=69513c0f&hm=d0a4c39c4698da49ddd009543cc43589b808f87cca095a9d1167119efe27ae6d&=&format=webp&quality=lossless", q: "3-46 請回答 9 是什麼？", a: "鎖骨胸骨端" },
+	
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454840918543695882/image.png?ex=69528db0&is=69513c30&hm=9dc62ffae74fb7793bef3f517a585930860e76e9088073937f8675dc5d256011&=&format=webp&quality=lossless", q: "3-40 請回答 1 是什麼？", a: "鎖骨" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454840918543695882/image.png?ex=69528db0&is=69513c30&hm=9dc62ffae74fb7793bef3f517a585930860e76e9088073937f8675dc5d256011&=&format=webp&quality=lossless", q: "3-40 請回答 2 是什麼？", a: "肩峰" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454840918543695882/image.png?ex=69528db0&is=69513c30&hm=9dc62ffae74fb7793bef3f517a585930860e76e9088073937f8675dc5d256011&=&format=webp&quality=lossless", q: "3-40 請回答 3 是什麼？", a: "喙狀突" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454840918543695882/image.png?ex=69528db0&is=69513c30&hm=9dc62ffae74fb7793bef3f517a585930860e76e9088073937f8675dc5d256011&=&format=webp&quality=lossless", q: "3-40 請回答 4 是什麼？", a: "胸骨" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454840918543695882/image.png?ex=69528db0&is=69513c30&hm=9dc62ffae74fb7793bef3f517a585930860e76e9088073937f8675dc5d256011&=&format=webp&quality=lossless", q: "3-40 請回答 5 是什麼？", a: "真肋的肋軟骨" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454840918543695882/image.png?ex=69528db0&is=69513c30&hm=9dc62ffae74fb7793bef3f517a585930860e76e9088073937f8675dc5d256011&=&format=webp&quality=lossless", q: "3-40 請回答 6 是什麼？", a: "第十二胸椎" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454840918543695882/image.png?ex=69528db0&is=69513c30&hm=9dc62ffae74fb7793bef3f517a585930860e76e9088073937f8675dc5d256011&=&format=webp&quality=lossless", q: "3-40 請回答 7 是什麼？", a: "假肋的肋軟骨" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454840918543695882/image.png?ex=69528db0&is=69513c30&hm=9dc62ffae74fb7793bef3f517a585930860e76e9088073937f8675dc5d256011&=&format=webp&quality=lossless", q: "3-40 請回答 8 是什麼？", a: "第一肋" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454840918543695882/image.png?ex=69528db0&is=69513c30&hm=9dc62ffae74fb7793bef3f517a585930860e76e9088073937f8675dc5d256011&=&format=webp&quality=lossless", q: "3-40 請回答 9 是什麼？", a: "第二肋" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454840918543695882/image.png?ex=69528db0&is=69513c30&hm=9dc62ffae74fb7793bef3f517a585930860e76e9088073937f8675dc5d256011&=&format=webp&quality=lossless", q: "3-40 請回答 10 是什麼？", a: "第三肋" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454840918543695882/image.png?ex=69528db0&is=69513c30&hm=9dc62ffae74fb7793bef3f517a585930860e76e9088073937f8675dc5d256011&=&format=webp&quality=lossless", q: "3-40 請回答 11 是什麼？", a: "第四肋" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454840918543695882/image.png?ex=69528db0&is=69513c30&hm=9dc62ffae74fb7793bef3f517a585930860e76e9088073937f8675dc5d256011&=&format=webp&quality=lossless", q: "3-40 請回答 12 是什麼？", a: "第五肋" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454840918543695882/image.png?ex=69528db0&is=69513c30&hm=9dc62ffae74fb7793bef3f517a585930860e76e9088073937f8675dc5d256011&=&format=webp&quality=lossless", q: "3-40 請回答 13 是什麼？", a: "第六肋" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454840918543695882/image.png?ex=69528db0&is=69513c30&hm=9dc62ffae74fb7793bef3f517a585930860e76e9088073937f8675dc5d256011&=&format=webp&quality=lossless", q: "3-40 請回答 14 是什麼？", a: "第七肋" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454840918543695882/image.png?ex=69528db0&is=69513c30&hm=9dc62ffae74fb7793bef3f517a585930860e76e9088073937f8675dc5d256011&=&format=webp&quality=lossless", q: "3-40 請回答 15 是什麼？", a: "第八肋" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454840918543695882/image.png?ex=69528db0&is=69513c30&hm=9dc62ffae74fb7793bef3f517a585930860e76e9088073937f8675dc5d256011&=&format=webp&quality=lossless", q: "3-40 請回答 16 是什麼？", a: "第九肋" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454840918543695882/image.png?ex=69528db0&is=69513c30&hm=9dc62ffae74fb7793bef3f517a585930860e76e9088073937f8675dc5d256011&=&format=webp&quality=lossless", q: "3-40 請回答 17 是什麼？", a: "第十肋" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454840918543695882/image.png?ex=69528db0&is=69513c30&hm=9dc62ffae74fb7793bef3f517a585930860e76e9088073937f8675dc5d256011&=&format=webp&quality=lossless", q: "3-40 請回答 18 是什麼？", a: "第十一肋" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454840918543695882/image.png?ex=69528db0&is=69513c30&hm=9dc62ffae74fb7793bef3f517a585930860e76e9088073937f8675dc5d256011&=&format=webp&quality=lossless", q: "3-40 請回答 19 是什麼？", a: "第十二肋" },,
+	
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454841108155728058/image.png?ex=69528ddd&is=69513c5d&hm=cb51597f53c141888006df0f9aeee1ea56d40679c828d6eb8960c3cdbd12ce01&=&format=webp&quality=lossless", q: "3-61 請回答 1 是什麼？", a: "舟狀骨" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454841108155728058/image.png?ex=69528ddd&is=69513c5d&hm=cb51597f53c141888006df0f9aeee1ea56d40679c828d6eb8960c3cdbd12ce01&=&format=webp&quality=lossless", q: "3-61 請回答 2 是什麼？", a: "大多角骨" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454841108155728058/image.png?ex=69528ddd&is=69513c5d&hm=cb51597f53c141888006df0f9aeee1ea56d40679c828d6eb8960c3cdbd12ce01&=&format=webp&quality=lossless", q: "3-61 請回答 3 是什麼？", a: "小多角骨" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454841108155728058/image.png?ex=69528ddd&is=69513c5d&hm=cb51597f53c141888006df0f9aeee1ea56d40679c828d6eb8960c3cdbd12ce01&=&format=webp&quality=lossless", q: "3-61 請回答 4 是什麼？", a: "頭狀骨" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454841108155728058/image.png?ex=69528ddd&is=69513c5d&hm=cb51597f53c141888006df0f9aeee1ea56d40679c828d6eb8960c3cdbd12ce01&=&format=webp&quality=lossless", q: "3-61 請回答 5 是什麼？", a: "第一掌骨" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454841108155728058/image.png?ex=69528ddd&is=69513c5d&hm=cb51597f53c141888006df0f9aeee1ea56d40679c828d6eb8960c3cdbd12ce01&=&format=webp&quality=lossless", q: "3-61 請回答 6 是什麼？", a: "第一近端指骨" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454841108155728058/image.png?ex=69528ddd&is=69513c5d&hm=cb51597f53c141888006df0f9aeee1ea56d40679c828d6eb8960c3cdbd12ce01&=&format=webp&quality=lossless", q: "3-61 請回答 7 是什麼？", a: "第一遠端指骨" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454841108155728058/image.png?ex=69528ddd&is=69513c5d&hm=cb51597f53c141888006df0f9aeee1ea56d40679c828d6eb8960c3cdbd12ce01&=&format=webp&quality=lossless", q: "3-61 請回答 8 是什麼？", a: "月狀骨" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454841108155728058/image.png?ex=69528ddd&is=69513c5d&hm=cb51597f53c141888006df0f9aeee1ea56d40679c828d6eb8960c3cdbd12ce01&=&format=webp&quality=lossless", q: "3-61 請回答 9 是什麼？", a: "三角骨" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454841108155728058/image.png?ex=69528ddd&is=69513c5d&hm=cb51597f53c141888006df0f9aeee1ea56d40679c828d6eb8960c3cdbd12ce01&=&format=webp&quality=lossless", q: "3-61 請回答 10 是什麼？", a: "豆狀骨" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454841108155728058/image.png?ex=69528ddd&is=69513c5d&hm=cb51597f53c141888006df0f9aeee1ea56d40679c828d6eb8960c3cdbd12ce01&=&format=webp&quality=lossless", q: "3-61 請回答 11 是什麼？", a: "鉤狀骨" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454841108155728058/image.png?ex=69528ddd&is=69513c5d&hm=cb51597f53c141888006df0f9aeee1ea56d40679c828d6eb8960c3cdbd12ce01&=&format=webp&quality=lossless", q: "3-61 請回答 12 是什麼？", a: "第五掌骨" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454841108155728058/image.png?ex=69528ddd&is=69513c5d&hm=cb51597f53c141888006df0f9aeee1ea56d40679c828d6eb8960c3cdbd12ce01&=&format=webp&quality=lossless", q: "3-61 請回答 13 是什麼？", a: "第五近端指骨" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454841108155728058/image.png?ex=69528ddd&is=69513c5d&hm=cb51597f53c141888006df0f9aeee1ea56d40679c828d6eb8960c3cdbd12ce01&=&format=webp&quality=lossless", q: "3-61 請回答 14 是什麼？", a: "第五中間指骨" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454841108155728058/image.png?ex=69528ddd&is=69513c5d&hm=cb51597f53c141888006df0f9aeee1ea56d40679c828d6eb8960c3cdbd12ce01&=&format=webp&quality=lossless", q: "3-61 請回答 15 是什麼？", a: "第五遠端指骨" },
+	
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454841322920742962/image.png?ex=69528e11&is=69513c91&hm=aadc9a60a2a1e4033ae782f7ac9d44143d3a78d15b9684cafd5a41e48d6cbf27&=&format=webp&quality=lossless", q: "3-52 請回答 1 是什麼？", a: "大結節" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454841322920742962/image.png?ex=69528e11&is=69513c91&hm=aadc9a60a2a1e4033ae782f7ac9d44143d3a78d15b9684cafd5a41e48d6cbf27&=&format=webp&quality=lossless", q: "3-52 請回答 2 是什麼？", a: "結節間溝" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454841322920742962/image.png?ex=69528e11&is=69513c91&hm=aadc9a60a2a1e4033ae782f7ac9d44143d3a78d15b9684cafd5a41e48d6cbf27&=&format=webp&quality=lossless", q: "3-52 請回答 3 是什麼？", a: "三角肌粗隆" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454841322920742962/image.png?ex=69528e11&is=69513c91&hm=aadc9a60a2a1e4033ae782f7ac9d44143d3a78d15b9684cafd5a41e48d6cbf27&=&format=webp&quality=lossless", q: "3-52 請回答 4 是什麼？", a: "外側髁上嵴" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454841322920742962/image.png?ex=69528e11&is=69513c91&hm=aadc9a60a2a1e4033ae782f7ac9d44143d3a78d15b9684cafd5a41e48d6cbf27&=&format=webp&quality=lossless", q: "3-52 請回答 5 是什麼？", a: "橈骨窩" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454841322920742962/image.png?ex=69528e11&is=69513c91&hm=aadc9a60a2a1e4033ae782f7ac9d44143d3a78d15b9684cafd5a41e48d6cbf27&=&format=webp&quality=lossless", q: "3-52 請回答 6 是什麼？", a: "外上髁" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454841322920742962/image.png?ex=69528e11&is=69513c91&hm=aadc9a60a2a1e4033ae782f7ac9d44143d3a78d15b9684cafd5a41e48d6cbf27&=&format=webp&quality=lossless", q: "3-52 請回答 7 是什麼？", a: "小頭" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454841322920742962/image.png?ex=69528e11&is=69513c91&hm=aadc9a60a2a1e4033ae782f7ac9d44143d3a78d15b9684cafd5a41e48d6cbf27&=&format=webp&quality=lossless", q: "3-52 請回答 8 是什麼？", a: "頭" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454841322920742962/image.png?ex=69528e11&is=69513c91&hm=aadc9a60a2a1e4033ae782f7ac9d44143d3a78d15b9684cafd5a41e48d6cbf27&=&format=webp&quality=lossless", q: "3-52 請回答 9 是什麼？", a: "小結節" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454841322920742962/image.png?ex=69528e11&is=69513c91&hm=aadc9a60a2a1e4033ae782f7ac9d44143d3a78d15b9684cafd5a41e48d6cbf27&=&format=webp&quality=lossless", q: "3-52 請回答 10 是什麼？", a: "解剖頸" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454841322920742962/image.png?ex=69528e11&is=69513c91&hm=aadc9a60a2a1e4033ae782f7ac9d44143d3a78d15b9684cafd5a41e48d6cbf27&=&format=webp&quality=lossless", q: "3-52 請回答 11 是什麼？", a: "外科頸" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454841322920742962/image.png?ex=69528e11&is=69513c91&hm=aadc9a60a2a1e4033ae782f7ac9d44143d3a78d15b9684cafd5a41e48d6cbf27&=&format=webp&quality=lossless", q: "3-52 請回答 12 是什麼？", a: "骨幹" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454841322920742962/image.png?ex=69528e11&is=69513c91&hm=aadc9a60a2a1e4033ae782f7ac9d44143d3a78d15b9684cafd5a41e48d6cbf27&=&format=webp&quality=lossless", q: "3-52 請回答 13 是什麼？", a: "冠狀窩" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454841322920742962/image.png?ex=69528e11&is=69513c91&hm=aadc9a60a2a1e4033ae782f7ac9d44143d3a78d15b9684cafd5a41e48d6cbf27&=&format=webp&quality=lossless", q: "3-52 請回答 14 是什麼？", a: "內上髁" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454841322920742962/image.png?ex=69528e11&is=69513c91&hm=aadc9a60a2a1e4033ae782f7ac9d44143d3a78d15b9684cafd5a41e48d6cbf27&=&format=webp&quality=lossless", q: "3-52 請回答 15 是什麼？", a: "滑車" },
+	
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454841428382449866/image.png?ex=69528e2a&is=69513caa&hm=a8c502f6d042d8e7a6bfcbf6368c02165148087e5af938b5c1bf9a194f6fa449&=&format=webp&quality=lossless", q: "3-53 請回答 1 是什麼？", a: "頭" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454841428382449866/image.png?ex=69528e2a&is=69513caa&hm=a8c502f6d042d8e7a6bfcbf6368c02165148087e5af938b5c1bf9a194f6fa449&=&format=webp&quality=lossless", q: "3-53 請回答 2 是什麼？", a: "解剖頸" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454841428382449866/image.png?ex=69528e2a&is=69513caa&hm=a8c502f6d042d8e7a6bfcbf6368c02165148087e5af938b5c1bf9a194f6fa449&=&format=webp&quality=lossless", q: "3-53 請回答 3 是什麼？", a: "外科頸" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454841428382449866/image.png?ex=69528e2a&is=69513caa&hm=a8c502f6d042d8e7a6bfcbf6368c02165148087e5af938b5c1bf9a194f6fa449&=&format=webp&quality=lossless", q: "3-53 請回答 4 是什麼？", a: "橈（神經）溝" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454841428382449866/image.png?ex=69528e2a&is=69513caa&hm=a8c502f6d042d8e7a6bfcbf6368c02165148087e5af938b5c1bf9a194f6fa449&=&format=webp&quality=lossless", q: "3-53 請回答 5 是什麼？", a: "內側髁上嵴" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454841428382449866/image.png?ex=69528e2a&is=69513caa&hm=a8c502f6d042d8e7a6bfcbf6368c02165148087e5af938b5c1bf9a194f6fa449&=&format=webp&quality=lossless", q: "3-53 請回答 6 是什麼？", a: "內上髁" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454841428382449866/image.png?ex=69528e2a&is=69513caa&hm=a8c502f6d042d8e7a6bfcbf6368c02165148087e5af938b5c1bf9a194f6fa449&=&format=webp&quality=lossless", q: "3-53 請回答 7 是什麼？", a: "滑車" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454841428382449866/image.png?ex=69528e2a&is=69513caa&hm=a8c502f6d042d8e7a6bfcbf6368c02165148087e5af938b5c1bf9a194f6fa449&=&format=webp&quality=lossless", q: "3-53 請回答 8 是什麼？", a: "大結節" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454841428382449866/image.png?ex=69528e2a&is=69513caa&hm=a8c502f6d042d8e7a6bfcbf6368c02165148087e5af938b5c1bf9a194f6fa449&=&format=webp&quality=lossless", q: "3-53 請回答 9 是什麼？", a: "骨幹" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454841428382449866/image.png?ex=69528e2a&is=69513caa&hm=a8c502f6d042d8e7a6bfcbf6368c02165148087e5af938b5c1bf9a194f6fa449&=&format=webp&quality=lossless", q: "3-53 請回答 10 是什麼？", a: "三角肌粗隆" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454841428382449866/image.png?ex=69528e2a&is=69513caa&hm=a8c502f6d042d8e7a6bfcbf6368c02165148087e5af938b5c1bf9a194f6fa449&=&format=webp&quality=lossless", q: "3-53 請回答 11 是什麼？", a: "外側髁上嵴" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454841428382449866/image.png?ex=69528e2a&is=69513caa&hm=a8c502f6d042d8e7a6bfcbf6368c02165148087e5af938b5c1bf9a194f6fa449&=&format=webp&quality=lossless", q: "3-53 請回答 12 是什麼？", a: "鷹嘴窩" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454841428382449866/image.png?ex=69528e2a&is=69513caa&hm=a8c502f6d042d8e7a6bfcbf6368c02165148087e5af938b5c1bf9a194f6fa449&=&format=webp&quality=lossless", q: "3-53 請回答 13 是什麼？", a: "外上髁" },
+	
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454841626718371922/image.png?ex=69528e59&is=69513cd9&hm=704849e22db0091c296444b2d7457c2378c2aa6f4ee0f6a1afe06d1ff4323735&=&format=webp&quality=lossless", q: "3-55 請回答 1 是什麼？", a: "（橈骨）頭" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454841626718371922/image.png?ex=69528e59&is=69513cd9&hm=704849e22db0091c296444b2d7457c2378c2aa6f4ee0f6a1afe06d1ff4323735&=&format=webp&quality=lossless", q: "3-55 請回答 2 是什麼？", a: "橈骨粗隆" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454841626718371922/image.png?ex=69528e59&is=69513cd9&hm=704849e22db0091c296444b2d7457c2378c2aa6f4ee0f6a1afe06d1ff4323735&=&format=webp&quality=lossless", q: "3-55 請回答 3 是什麼？", a: "橈骨" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454841626718371922/image.png?ex=69528e59&is=69513cd9&hm=704849e22db0091c296444b2d7457c2378c2aa6f4ee0f6a1afe06d1ff4323735&=&format=webp&quality=lossless", q: "3-55 請回答 4 是什麼？", a: "橈骨莖突" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454841626718371922/image.png?ex=69528e59&is=69513cd9&hm=704849e22db0091c296444b2d7457c2378c2aa6f4ee0f6a1afe06d1ff4323735&=&format=webp&quality=lossless", q: "3-55 請回答 5 是什麼？", a: "滑車切迹" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454841626718371922/image.png?ex=69528e59&is=69513cd9&hm=704849e22db0091c296444b2d7457c2378c2aa6f4ee0f6a1afe06d1ff4323735&=&format=webp&quality=lossless", q: "3-55 請回答 6 是什麼？", a: "尺骨" },
+	
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454841803260956882/image.png?ex=69528e83&is=69513d03&hm=bcaa041eb97439da2dbc525d429c956a0f086b5fa6804048c093158558fd34c7&=&format=webp&quality=lossless", q: "3-67 請回答 1 是什麼？", a: "髂骨（腸骨）嵴" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454841803260956882/image.png?ex=69528e83&is=69513d03&hm=bcaa041eb97439da2dbc525d429c956a0f086b5fa6804048c093158558fd34c7&=&format=webp&quality=lossless", q: "3-67 請回答 2 是什麼？", a: "髂骨（腸骨）窩" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454841803260956882/image.png?ex=69528e83&is=69513d03&hm=bcaa041eb97439da2dbc525d429c956a0f086b5fa6804048c093158558fd34c7&=&format=webp&quality=lossless", q: "3-67 請回答 3 是什麼？", a: "薦骨" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454841803260956882/image.png?ex=69528e83&is=69513d03&hm=bcaa041eb97439da2dbc525d429c956a0f086b5fa6804048c093158558fd34c7&=&format=webp&quality=lossless", q: "3-67 請回答 4 是什麼？", a: "閉孔" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454841803260956882/image.png?ex=69528e83&is=69513d03&hm=bcaa041eb97439da2dbc525d429c956a0f086b5fa6804048c093158558fd34c7&=&format=webp&quality=lossless", q: "3-67 請回答 5 是什麼？", a: "男性恥骨弓夾角較小" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454841803260956882/image.png?ex=69528e83&is=69513d03&hm=bcaa041eb97439da2dbc525d429c956a0f086b5fa6804048c093158558fd34c7&=&format=webp&quality=lossless", q: "3-67 請回答 6 是什麼？", a: "男性尾骨較前曲" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454841803260956882/image.png?ex=69528e83&is=69513d03&hm=bcaa041eb97439da2dbc525d429c956a0f086b5fa6804048c093158558fd34c7&=&format=webp&quality=lossless", q: "3-67 請回答 7 是什麼？", a: "坐骨粗隆" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454841803260956882/image.png?ex=69528e83&is=69513d03&hm=bcaa041eb97439da2dbc525d429c956a0f086b5fa6804048c093158558fd34c7&=&format=webp&quality=lossless", q: "3-67 請回答 8 是什麼？", a: "女性的髂骨（腸骨）外傾" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454841803260956882/image.png?ex=69528e83&is=69513d03&hm=bcaa041eb97439da2dbc525d429c956a0f086b5fa6804048c093158558fd34c7&=&format=webp&quality=lossless", q: "3-67 請回答 9 是什麼？", a: "恥骨突" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454841803260956882/image.png?ex=69528e83&is=69513d03&hm=bcaa041eb97439da2dbc525d429c956a0f086b5fa6804048c093158558fd34c7&=&format=webp&quality=lossless", q: "3-67 請回答 10 是什麼？", a: "髖臼" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454841803260956882/image.png?ex=69528e83&is=69513d03&hm=bcaa041eb97439da2dbc525d429c956a0f086b5fa6804048c093158558fd34c7&=&format=webp&quality=lossless", q: "3-67 請回答 11 是什麼？", a: "恥骨聯合" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454841803260956882/image.png?ex=69528e83&is=69513d03&hm=bcaa041eb97439da2dbc525d429c956a0f086b5fa6804048c093158558fd34c7&=&format=webp&quality=lossless", q: "3-67 請回答 12 是什麼？", a: "女性的坐骨粗隆較為分開" },
+	
+    { img: "https://media.discordapp.net/attachments/1454838383921729598/1454841960769650700/image.png?ex=69528ea9&is=69513d29&hm=9b36749adc8402bf56f94bb937d2c418ec609512b6e214b54a95a06435dc0635&=&format=webp&quality=lossless", q: "3-63 請回答 1 是什麼？", a: "髂骨（腸骨）" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454841960769650700/image.png?ex=69528ea9&is=69513d29&hm=9b36749adc8402bf56f94bb937d2c418ec609512b6e214b54a95a06435dc0635&=&format=webp&quality=lossless", q: "3-63 請回答 2 是什麼？", a: "髂骨（腸骨）後上棘" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454841960769650700/image.png?ex=69528ea9&is=69513d29&hm=9b36749adc8402bf56f94bb937d2c418ec609512b6e214b54a95a06435dc0635&=&format=webp&quality=lossless", q: "3-63 請回答 3 是什麼？", a: "髂骨（腸骨）後下棘" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454841960769650700/image.png?ex=69528ea9&is=69513d29&hm=9b36749adc8402bf56f94bb937d2c418ec609512b6e214b54a95a06435dc0635&=&format=webp&quality=lossless", q: "3-63 請回答 4 是什麼？", a: "坐骨大切迹" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454841960769650700/image.png?ex=69528ea9&is=69513d29&hm=9b36749adc8402bf56f94bb937d2c418ec609512b6e214b54a95a06435dc0635&=&format=webp&quality=lossless", q: "3-63 請回答 5 是什麼？", a: "坐骨棘" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454841960769650700/image.png?ex=69528ea9&is=69513d29&hm=9b36749adc8402bf56f94bb937d2c418ec609512b6e214b54a95a06435dc0635&=&format=webp&quality=lossless", q: "3-63 請回答 6 是什麼？", a: "坐骨小切迹" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454841960769650700/image.png?ex=69528ea9&is=69513d29&hm=9b36749adc8402bf56f94bb937d2c418ec609512b6e214b54a95a06435dc0635&=&format=webp&quality=lossless", q: "3-63 請回答 7 是什麼？", a: "坐骨" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454841960769650700/image.png?ex=69528ea9&is=69513d29&hm=9b36749adc8402bf56f94bb937d2c418ec609512b6e214b54a95a06435dc0635&=&format=webp&quality=lossless", q: "3-63 請回答 8 是什麼？", a: "坐骨粗隆" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454841960769650700/image.png?ex=69528ea9&is=69513d29&hm=9b36749adc8402bf56f94bb937d2c418ec609512b6e214b54a95a06435dc0635&=&format=webp&quality=lossless", q: "3-63 請回答 9 是什麼？", a: "閉孔" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454841960769650700/image.png?ex=69528ea9&is=69513d29&hm=9b36749adc8402bf56f94bb937d2c418ec609512b6e214b54a95a06435dc0635&=&format=webp&quality=lossless", q: "3-63 請回答 10 是什麼？", a: "坐骨枝" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454841960769650700/image.png?ex=69528ea9&is=69513d29&hm=9b36749adc8402bf56f94bb937d2c418ec609512b6e214b54a95a06435dc0635&=&format=webp&quality=lossless", q: "3-63 請回答 11 是什麼？", a: "髂骨（腸骨）嵴" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454841960769650700/image.png?ex=69528ea9&is=69513d29&hm=9b36749adc8402bf56f94bb937d2c418ec609512b6e214b54a95a06435dc0635&=&format=webp&quality=lossless", q: "3-63 請回答 12 是什麼？", a: "髂骨（腸骨）翼" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454841960769650700/image.png?ex=69528ea9&is=69513d29&hm=9b36749adc8402bf56f94bb937d2c418ec609512b6e214b54a95a06435dc0635&=&format=webp&quality=lossless", q: "3-63 請回答 13 是什麼？", a: "髂骨（腸骨）前上棘" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454841960769650700/image.png?ex=69528ea9&is=69513d29&hm=9b36749adc8402bf56f94bb937d2c418ec609512b6e214b54a95a06435dc0635&=&format=webp&quality=lossless", q: "3-63 請回答 14 是什麼？", a: "髂骨（腸骨）前下棘" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454841960769650700/image.png?ex=69528ea9&is=69513d29&hm=9b36749adc8402bf56f94bb937d2c418ec609512b6e214b54a95a06435dc0635&=&format=webp&quality=lossless", q: "3-63 請回答 15 是什麼？", a: "髖臼" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454841960769650700/image.png?ex=69528ea9&is=69513d29&hm=9b36749adc8402bf56f94bb937d2c418ec609512b6e214b54a95a06435dc0635&=&format=webp&quality=lossless", q: "3-63 請回答 16 是什麼？", a: "恥骨上枝" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454841960769650700/image.png?ex=69528ea9&is=69513d29&hm=9b36749adc8402bf56f94bb937d2c418ec609512b6e214b54a95a06435dc0635&=&format=webp&quality=lossless", q: "3-63 請回答 17 是什麼？", a: "恥骨突" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454841960769650700/image.png?ex=69528ea9&is=69513d29&hm=9b36749adc8402bf56f94bb937d2c418ec609512b6e214b54a95a06435dc0635&=&format=webp&quality=lossless", q: "3-63 請回答 18 是什麼？", a: "恥骨" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454841960769650700/image.png?ex=69528ea9&is=69513d29&hm=9b36749adc8402bf56f94bb937d2c418ec609512b6e214b54a95a06435dc0635&=&format=webp&quality=lossless", q: "3-63 請回答 19 是什麼？", a: "恥骨下枝" },
+	
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454842079971770532/image.png?ex=69528ec5&is=69513d45&hm=31dce479985a1dad9cfa94f200e91780f71f514ca19242da80378e2b823e85b0&=&format=webp&quality=lossless", q: "3-70 請回答 1 是什麼？", a: "大轉子" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454842079971770532/image.png?ex=69528ec5&is=69513d45&hm=31dce479985a1dad9cfa94f200e91780f71f514ca19242da80378e2b823e85b0&=&format=webp&quality=lossless", q: "3-70 請回答 2 是什麼？", a: "轉子間線" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454842079971770532/image.png?ex=69528ec5&is=69513d45&hm=31dce479985a1dad9cfa94f200e91780f71f514ca19242da80378e2b823e85b0&=&format=webp&quality=lossless", q: "3-70 請回答 3 是什麼？", a: "骨幹" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454842079971770532/image.png?ex=69528ec5&is=69513d45&hm=31dce479985a1dad9cfa94f200e91780f71f514ca19242da80378e2b823e85b0&=&format=webp&quality=lossless", q: "3-70 請回答 4 是什麼？", a: "外上髁" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454842079971770532/image.png?ex=69528ec5&is=69513d45&hm=31dce479985a1dad9cfa94f200e91780f71f514ca19242da80378e2b823e85b0&=&format=webp&quality=lossless", q: "3-70 請回答 5 是什麼？", a: "外髁" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454842079971770532/image.png?ex=69528ec5&is=69513d45&hm=31dce479985a1dad9cfa94f200e91780f71f514ca19242da80378e2b823e85b0&=&format=webp&quality=lossless", q: "3-70 請回答 6 是什麼？", a: "髕面" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454842079971770532/image.png?ex=69528ec5&is=69513d45&hm=31dce479985a1dad9cfa94f200e91780f71f514ca19242da80378e2b823e85b0&=&format=webp&quality=lossless", q: "3-70 請回答 7 是什麼？", a: "（股骨）頭" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454842079971770532/image.png?ex=69528ec5&is=69513d45&hm=31dce479985a1dad9cfa94f200e91780f71f514ca19242da80378e2b823e85b0&=&format=webp&quality=lossless", q: "3-70 請回答 8 是什麼？", a: "（股骨）頸" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454842079971770532/image.png?ex=69528ec5&is=69513d45&hm=31dce479985a1dad9cfa94f200e91780f71f514ca19242da80378e2b823e85b0&=&format=webp&quality=lossless", q: "3-70 請回答 9 是什麼？", a: "小轉子" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454842079971770532/image.png?ex=69528ec5&is=69513d45&hm=31dce479985a1dad9cfa94f200e91780f71f514ca19242da80378e2b823e85b0&=&format=webp&quality=lossless", q: "3-70 請回答 10 是什麼？", a: "內收肌結節" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454842079971770532/image.png?ex=69528ec5&is=69513d45&hm=31dce479985a1dad9cfa94f200e91780f71f514ca19242da80378e2b823e85b0&=&format=webp&quality=lossless", q: "3-70 請回答 11 是什麼？", a: "內上髁" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454842079971770532/image.png?ex=69528ec5&is=69513d45&hm=31dce479985a1dad9cfa94f200e91780f71f514ca19242da80378e2b823e85b0&=&format=webp&quality=lossless", q: "3-70 請回答 12 是什麼？", a: "內髁" },
+	
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454842129170829506/image.png?ex=69528ed1&is=69513d51&hm=2829c399d17e5564e5f4896ec1bebbd98537007298ec6d94add670866b6f1527&=&format=webp&quality=lossless", q: "3-71 請回答 1 是什麼？", a: "（股骨）頭" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454842129170829506/image.png?ex=69528ed1&is=69513d51&hm=2829c399d17e5564e5f4896ec1bebbd98537007298ec6d94add670866b6f1527&=&format=webp&quality=lossless", q: "3-71 請回答 2 是什麼？", a: "（股骨）頸" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454842129170829506/image.png?ex=69528ed1&is=69513d51&hm=2829c399d17e5564e5f4896ec1bebbd98537007298ec6d94add670866b6f1527&=&format=webp&quality=lossless", q: "3-71 請回答 3 是什麼？", a: "小轉子" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454842129170829506/image.png?ex=69528ed1&is=69513d51&hm=2829c399d17e5564e5f4896ec1bebbd98537007298ec6d94add670866b6f1527&=&format=webp&quality=lossless", q: "3-71 請回答 4 是什麼？", a: "內側髁上線" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454842129170829506/image.png?ex=69528ed1&is=69513d51&hm=2829c399d17e5564e5f4896ec1bebbd98537007298ec6d94add670866b6f1527&=&format=webp&quality=lossless", q: "3-71 請回答 5 是什麼？", a: "內收肌結節" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454842129170829506/image.png?ex=69528ed1&is=69513d51&hm=2829c399d17e5564e5f4896ec1bebbd98537007298ec6d94add670866b6f1527&=&format=webp&quality=lossless", q: "3-71 請回答 6 是什麼？", a: "內上髁" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454842129170829506/image.png?ex=69528ed1&is=69513d51&hm=2829c399d17e5564e5f4896ec1bebbd98537007298ec6d94add670866b6f1527&=&format=webp&quality=lossless", q: "3-71 請回答 7 是什麼？", a: "內髁" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454842129170829506/image.png?ex=69528ed1&is=69513d51&hm=2829c399d17e5564e5f4896ec1bebbd98537007298ec6d94add670866b6f1527&=&format=webp&quality=lossless", q: "3-71 請回答 8 是什麼？", a: "大轉子" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454842129170829506/image.png?ex=69528ed1&is=69513d51&hm=2829c399d17e5564e5f4896ec1bebbd98537007298ec6d94add670866b6f1527&=&format=webp&quality=lossless", q: "3-71 請回答 9 是什麼？", a: "轉子間嵴" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454842129170829506/image.png?ex=69528ed1&is=69513d51&hm=2829c399d17e5564e5f4896ec1bebbd98537007298ec6d94add670866b6f1527&=&format=webp&quality=lossless", q: "3-71 請回答 10 是什麼？", a: "臀肌粗隆" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454842129170829506/image.png?ex=69528ed1&is=69513d51&hm=2829c399d17e5564e5f4896ec1bebbd98537007298ec6d94add670866b6f1527&=&format=webp&quality=lossless", q: "3-71 請回答 11 是什麼？", a: "粗線" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454842129170829506/image.png?ex=69528ed1&is=69513d51&hm=2829c399d17e5564e5f4896ec1bebbd98537007298ec6d94add670866b6f1527&=&format=webp&quality=lossless", q: "3-71 請回答 12 是什麼？", a: "外側髁上線" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454842129170829506/image.png?ex=69528ed1&is=69513d51&hm=2829c399d17e5564e5f4896ec1bebbd98537007298ec6d94add670866b6f1527&=&format=webp&quality=lossless", q: "3-71 請回答 13 是什麼？", a: "外上髁" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454842129170829506/image.png?ex=69528ed1&is=69513d51&hm=2829c399d17e5564e5f4896ec1bebbd98537007298ec6d94add670866b6f1527&=&format=webp&quality=lossless", q: "3-71 請回答 14 是什麼？", a: "外髁" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454842129170829506/image.png?ex=69528ed1&is=69513d51&hm=2829c399d17e5564e5f4896ec1bebbd98537007298ec6d94add670866b6f1527&=&format=webp&quality=lossless", q: "3-71 請回答 15 是什麼？", a: "髁間窩" },
+	
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454842354606538958/image.png?ex=69528f07&is=69513d87&hm=74cc7e18785deb9017b71ae07cae5afea383697285e89e257367d1b8c0ff7e6c&=&format=webp&quality=lossless", q: "4-3 請回答 1 是什麼？", a: "耳上肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454842354606538958/image.png?ex=69528f07&is=69513d87&hm=74cc7e18785deb9017b71ae07cae5afea383697285e89e257367d1b8c0ff7e6c&=&format=webp&quality=lossless", q: "4-3 請回答 2 是什麼？", a: "顱頂肌：枕腹" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454842354606538958/image.png?ex=69528f07&is=69513d87&hm=74cc7e18785deb9017b71ae07cae5afea383697285e89e257367d1b8c0ff7e6c&=&format=webp&quality=lossless", q: "4-3 請回答 3 是什麼？", a: "嚼肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454842354606538958/image.png?ex=69528f07&is=69513d87&hm=74cc7e18785deb9017b71ae07cae5afea383697285e89e257367d1b8c0ff7e6c&=&format=webp&quality=lossless", q: "4-3 請回答 4 是什麼？", a: "頰肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454842354606538958/image.png?ex=69528f07&is=69513d87&hm=74cc7e18785deb9017b71ae07cae5afea383697285e89e257367d1b8c0ff7e6c&=&format=webp&quality=lossless", q: "4-3 請回答 5 是什麼？", a: "胸鎖乳突肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454842354606538958/image.png?ex=69528f07&is=69513d87&hm=74cc7e18785deb9017b71ae07cae5afea383697285e89e257367d1b8c0ff7e6c&=&format=webp&quality=lossless", q: "4-3 請回答 6 是什麼？", a: "顱頂肌：額腹" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454842354606538958/image.png?ex=69528f07&is=69513d87&hm=74cc7e18785deb9017b71ae07cae5afea383697285e89e257367d1b8c0ff7e6c&=&format=webp&quality=lossless", q: "4-3 請回答 7 是什麼？", a: "眼輪匝肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454842354606538958/image.png?ex=69528f07&is=69513d87&hm=74cc7e18785deb9017b71ae07cae5afea383697285e89e257367d1b8c0ff7e6c&=&format=webp&quality=lossless", q: "4-3 請回答 8 是什麼？", a: "上提唇肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454842354606538958/image.png?ex=69528f07&is=69513d87&hm=74cc7e18785deb9017b71ae07cae5afea383697285e89e257367d1b8c0ff7e6c&=&format=webp&quality=lossless", q: "4-3 請回答 9 是什麼？", a: "顴小肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454842354606538958/image.png?ex=69528f07&is=69513d87&hm=74cc7e18785deb9017b71ae07cae5afea383697285e89e257367d1b8c0ff7e6c&=&format=webp&quality=lossless", q: "4-3 請回答 10 是什麼？", a: "顴大肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454842354606538958/image.png?ex=69528f07&is=69513d87&hm=74cc7e18785deb9017b71ae07cae5afea383697285e89e257367d1b8c0ff7e6c&=&format=webp&quality=lossless", q: "4-3 請回答 11 是什麼？", a: "笑肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454842354606538958/image.png?ex=69528f07&is=69513d87&hm=74cc7e18785deb9017b71ae07cae5afea383697285e89e257367d1b8c0ff7e6c&=&format=webp&quality=lossless", q: "4-3 請回答 12 是什麼？", a: "口輪匝肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454842354606538958/image.png?ex=69528f07&is=69513d87&hm=74cc7e18785deb9017b71ae07cae5afea383697285e89e257367d1b8c0ff7e6c&=&format=webp&quality=lossless", q: "4-3 請回答 13 是什麼？", a: "降嘴角肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454842354606538958/image.png?ex=69528f07&is=69513d87&hm=74cc7e18785deb9017b71ae07cae5afea383697285e89e257367d1b8c0ff7e6c&=&format=webp&quality=lossless", q: "4-3 請回答 14 是什麼？", a: "頦肌" },
+	                                                                                                                                                                                                                                              
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454842558214836274/image.png?ex=69528f37&is=69513db7&hm=ac2cc3b0ecd1c016b24c480ee36a34f8485499621c658501fe2be11a7cb26896&=&format=webp&quality=lossless", q: "4-10 請回答 1 是什麼？", a: "斜方肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454842558214836274/image.png?ex=69528f37&is=69513db7&hm=ac2cc3b0ecd1c016b24c480ee36a34f8485499621c658501fe2be11a7cb26896&=&format=webp&quality=lossless", q: "4-10 請回答 2 是什麼？", a: "三角肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454842558214836274/image.png?ex=69528f37&is=69513db7&hm=ac2cc3b0ecd1c016b24c480ee36a34f8485499621c658501fe2be11a7cb26896&=&format=webp&quality=lossless", q: "4-10 請回答 3 是什麼？", a: "胸大肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454842558214836274/image.png?ex=69528f37&is=69513db7&hm=ac2cc3b0ecd1c016b24c480ee36a34f8485499621c658501fe2be11a7cb26896&=&format=webp&quality=lossless", q: "4-10 請回答 4 是什麼？", a: "腹外斜肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454842558214836274/image.png?ex=69528f37&is=69513db7&hm=ac2cc3b0ecd1c016b24c480ee36a34f8485499621c658501fe2be11a7cb26896&=&format=webp&quality=lossless", q: "4-10 請回答 5 是什麼？", a: "腹外斜肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454842558214836274/image.png?ex=69528f37&is=69513db7&hm=ac2cc3b0ecd1c016b24c480ee36a34f8485499621c658501fe2be11a7cb26896&=&format=webp&quality=lossless", q: "4-10 請回答 6 是什麼？", a: "胸小肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454842558214836274/image.png?ex=69528f37&is=69513db7&hm=ac2cc3b0ecd1c016b24c480ee36a34f8485499621c658501fe2be11a7cb26896&=&format=webp&quality=lossless", q: "4-10 請回答 7 是什麼？", a: "肋間內肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454842558214836274/image.png?ex=69528f37&is=69513db7&hm=ac2cc3b0ecd1c016b24c480ee36a34f8485499621c658501fe2be11a7cb26896&=&format=webp&quality=lossless", q: "4-10 請回答 8 是什麼？", a: "前鋸肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454842558214836274/image.png?ex=69528f37&is=69513db7&hm=ac2cc3b0ecd1c016b24c480ee36a34f8485499621c658501fe2be11a7cb26896&=&format=webp&quality=lossless", q: "4-10 請回答 9 是什麼？", a: "肋間外肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454842558214836274/image.png?ex=69528f37&is=69513db7&hm=ac2cc3b0ecd1c016b24c480ee36a34f8485499621c658501fe2be11a7cb26896&=&format=webp&quality=lossless", q: "4-10 請回答 10 是什麼？", a: "腹內斜肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454842558214836274/image.png?ex=69528f37&is=69513db7&hm=ac2cc3b0ecd1c016b24c480ee36a34f8485499621c658501fe2be11a7cb26896&=&format=webp&quality=lossless", q: "4-10 請回答 11 是什麼？", a: "腹直肌" },
+	
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454842681128648888/image.png?ex=69528f54&is=69513dd4&hm=67b6312ef50819e044a6798ae0f51dcdef139462de2708beadc04679ab97e9e3&=&format=webp&quality=lossless", q: "3-82 請回答 1 是什麼？", a: "跟骨" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454842681128648888/image.png?ex=69528f54&is=69513dd4&hm=67b6312ef50819e044a6798ae0f51dcdef139462de2708beadc04679ab97e9e3&=&format=webp&quality=lossless", q: "3-82 請回答 2 是什麼？", a: "骰骨" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454842681128648888/image.png?ex=69528f54&is=69513dd4&hm=67b6312ef50819e044a6798ae0f51dcdef139462de2708beadc04679ab97e9e3&=&format=webp&quality=lossless", q: "3-82 請回答 3 是什麼？", a: "外側楔狀骨" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454842681128648888/image.png?ex=69528f54&is=69513dd4&hm=67b6312ef50819e044a6798ae0f51dcdef139462de2708beadc04679ab97e9e3&=&format=webp&quality=lossless", q: "3-82 請回答 4 是什麼？", a: "蹠骨" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454842681128648888/image.png?ex=69528f54&is=69513dd4&hm=67b6312ef50819e044a6798ae0f51dcdef139462de2708beadc04679ab97e9e3&=&format=webp&quality=lossless", q: "3-82 請回答 5 是什麼？", a: "第五近端趾骨" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454842681128648888/image.png?ex=69528f54&is=69513dd4&hm=67b6312ef50819e044a6798ae0f51dcdef139462de2708beadc04679ab97e9e3&=&format=webp&quality=lossless", q: "3-82 請回答 6 是什麼？", a: "第五中間趾骨" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454842681128648888/image.png?ex=69528f54&is=69513dd4&hm=67b6312ef50819e044a6798ae0f51dcdef139462de2708beadc04679ab97e9e3&=&format=webp&quality=lossless", q: "3-82 請回答 7 是什麼？", a: "第五遠端趾骨" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454842681128648888/image.png?ex=69528f54&is=69513dd4&hm=67b6312ef50819e044a6798ae0f51dcdef139462de2708beadc04679ab97e9e3&=&format=webp&quality=lossless", q: "3-82 請回答 8 是什麼？", a: "距骨" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454842681128648888/image.png?ex=69528f54&is=69513dd4&hm=67b6312ef50819e044a6798ae0f51dcdef139462de2708beadc04679ab97e9e3&=&format=webp&quality=lossless", q: "3-82 請回答 9 是什麼？", a: "舟狀骨" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454842681128648888/image.png?ex=69528f54&is=69513dd4&hm=67b6312ef50819e044a6798ae0f51dcdef139462de2708beadc04679ab97e9e3&=&format=webp&quality=lossless", q: "3-82 請回答 10 是什麼？", a: "中間楔狀骨" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454842681128648888/image.png?ex=69528f54&is=69513dd4&hm=67b6312ef50819e044a6798ae0f51dcdef139462de2708beadc04679ab97e9e3&=&format=webp&quality=lossless", q: "3-82 請回答 11 是什麼？", a: "內側楔狀骨" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454842681128648888/image.png?ex=69528f54&is=69513dd4&hm=67b6312ef50819e044a6798ae0f51dcdef139462de2708beadc04679ab97e9e3&=&format=webp&quality=lossless", q: "3-82 請回答 12 是什麼？", a: "第一蹠骨" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454842681128648888/image.png?ex=69528f54&is=69513dd4&hm=67b6312ef50819e044a6798ae0f51dcdef139462de2708beadc04679ab97e9e3&=&format=webp&quality=lossless", q: "3-82 請回答 13 是什麼？", a: "第一近端趾骨" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454842681128648888/image.png?ex=69528f54&is=69513dd4&hm=67b6312ef50819e044a6798ae0f51dcdef139462de2708beadc04679ab97e9e3&=&format=webp&quality=lossless", q: "3-82 請回答 14 是什麼？", a: "第一遠端趾骨" },
+	
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454842718961406066/image.png?ex=69528f5d&is=69513ddd&hm=bb34b802a458452c178e1357b6749ad63460367bdb5dcc0115107b0ae9426aab&=&format=webp&quality=lossless", q: "3-83 請回答 1 是什麼？", a: "跟骨" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454842718961406066/image.png?ex=69528f5d&is=69513ddd&hm=bb34b802a458452c178e1357b6749ad63460367bdb5dcc0115107b0ae9426aab&=&format=webp&quality=lossless", q: "3-83 請回答 2 是什麼？", a: "骰骨" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454842718961406066/image.png?ex=69528f5d&is=69513ddd&hm=bb34b802a458452c178e1357b6749ad63460367bdb5dcc0115107b0ae9426aab&=&format=webp&quality=lossless", q: "3-83 請回答 3 是什麼？", a: "外側楔狀骨" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454842718961406066/image.png?ex=69528f5d&is=69513ddd&hm=bb34b802a458452c178e1357b6749ad63460367bdb5dcc0115107b0ae9426aab&=&format=webp&quality=lossless", q: "3-83 請回答 4 是什麼？", a: "第五蹠骨" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454842718961406066/image.png?ex=69528f5d&is=69513ddd&hm=bb34b802a458452c178e1357b6749ad63460367bdb5dcc0115107b0ae9426aab&=&format=webp&quality=lossless", q: "3-83 請回答 5 是什麼？", a: "第五近端趾骨" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454842718961406066/image.png?ex=69528f5d&is=69513ddd&hm=bb34b802a458452c178e1357b6749ad63460367bdb5dcc0115107b0ae9426aab&=&format=webp&quality=lossless", q: "3-83 請回答 6 是什麼？", a: "第五中間趾骨" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454842718961406066/image.png?ex=69528f5d&is=69513ddd&hm=bb34b802a458452c178e1357b6749ad63460367bdb5dcc0115107b0ae9426aab&=&format=webp&quality=lossless", q: "3-83 請回答 7 是什麼？", a: "第五遠端趾骨" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454842718961406066/image.png?ex=69528f5d&is=69513ddd&hm=bb34b802a458452c178e1357b6749ad63460367bdb5dcc0115107b0ae9426aab&=&format=webp&quality=lossless", q: "3-83 請回答 8 是什麼？", a: "距骨" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454842718961406066/image.png?ex=69528f5d&is=69513ddd&hm=bb34b802a458452c178e1357b6749ad63460367bdb5dcc0115107b0ae9426aab&=&format=webp&quality=lossless", q: "3-83 請回答 9 是什麼？", a: "舟狀骨" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454842718961406066/image.png?ex=69528f5d&is=69513ddd&hm=bb34b802a458452c178e1357b6749ad63460367bdb5dcc0115107b0ae9426aab&=&format=webp&quality=lossless", q: "3-83 請回答 10 是什麼？", a: "中間楔狀骨" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454842718961406066/image.png?ex=69528f5d&is=69513ddd&hm=bb34b802a458452c178e1357b6749ad63460367bdb5dcc0115107b0ae9426aab&=&format=webp&quality=lossless", q: "3-83 請回答 11 是什麼？", a: "內側楔狀骨" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454842718961406066/image.png?ex=69528f5d&is=69513ddd&hm=bb34b802a458452c178e1357b6749ad63460367bdb5dcc0115107b0ae9426aab&=&format=webp&quality=lossless", q: "3-83 請回答 12 是什麼？", a: "第一蹠骨" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454842718961406066/image.png?ex=69528f5d&is=69513ddd&hm=bb34b802a458452c178e1357b6749ad63460367bdb5dcc0115107b0ae9426aab&=&format=webp&quality=lossless", q: "3-83 請回答 13 是什麼？", a: "第一近端趾骨" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454842718961406066/image.png?ex=69528f5d&is=69513ddd&hm=bb34b802a458452c178e1357b6749ad63460367bdb5dcc0115107b0ae9426aab&=&format=webp&quality=lossless", q: "3-83 請回答 14 是什麼？", a: "第一遠端趾骨" },
+
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454842813517660240/image.png?ex=69528f74&is=69513df4&hm=468816ec89238ae32fb0a44080d315edee265dcd137acfaa84b741845495b31c&=&format=webp&quality=lossless", q: "3-76 請回答 1 是什麼？", a: "脛骨粗隆" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454842813517660240/image.png?ex=69528f74&is=69513df4&hm=468816ec89238ae32fb0a44080d315edee265dcd137acfaa84b741845495b31c&=&format=webp&quality=lossless", q: "3-76 請回答 2 是什麼？", a: "脛骨幹" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454842813517660240/image.png?ex=69528f74&is=69513df4&hm=468816ec89238ae32fb0a44080d315edee265dcd137acfaa84b741845495b31c&=&format=webp&quality=lossless", q: "3-76 請回答 3 是什麼？", a: "內踝" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454842813517660240/image.png?ex=69528f74&is=69513df4&hm=468816ec89238ae32fb0a44080d315edee265dcd137acfaa84b741845495b31c&=&format=webp&quality=lossless", q: "3-76 請回答 4 是什麼？", a: "近端脛腓關節" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454842813517660240/image.png?ex=69528f74&is=69513df4&hm=468816ec89238ae32fb0a44080d315edee265dcd137acfaa84b741845495b31c&=&format=webp&quality=lossless", q: "3-76 請回答 5 是什麼？", a: "腓骨頭" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454842813517660240/image.png?ex=69528f74&is=69513df4&hm=468816ec89238ae32fb0a44080d315edee265dcd137acfaa84b741845495b31c&=&format=webp&quality=lossless", q: "3-76 請回答 6 是什麼？", a: "腓骨幹" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454842813517660240/image.png?ex=69528f74&is=69513df4&hm=468816ec89238ae32fb0a44080d315edee265dcd137acfaa84b741845495b31c&=&format=webp&quality=lossless", q: "3-76 請回答 7 是什麼？", a: "遠端脛腓關節" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454842813517660240/image.png?ex=69528f74&is=69513df4&hm=468816ec89238ae32fb0a44080d315edee265dcd137acfaa84b741845495b31c&=&format=webp&quality=lossless", q: "3-76 請回答 8 是什麼？", a: "外踝" },
+	
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454842902545956917/image.png?ex=69528f89&is=69513e09&hm=dd4bd3748f37ae811e7a324070509ea277bf5c2e37ca9a5ad74f89164831a27b&=&format=webp&quality=lossless", q: "4-6 請回答 1 是什麼？", a: "顱頂肌：額腹" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454842902545956917/image.png?ex=69528f89&is=69513e09&hm=dd4bd3748f37ae811e7a324070509ea277bf5c2e37ca9a5ad74f89164831a27b&=&format=webp&quality=lossless", q: "4-6 請回答 2 是什麼？", a: "眼輪匝肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454842902545956917/image.png?ex=69528f89&is=69513e09&hm=dd4bd3748f37ae811e7a324070509ea277bf5c2e37ca9a5ad74f89164831a27b&=&format=webp&quality=lossless", q: "4-6 請回答 3 是什麼？", a: "上提唇肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454842902545956917/image.png?ex=69528f89&is=69513e09&hm=dd4bd3748f37ae811e7a324070509ea277bf5c2e37ca9a5ad74f89164831a27b&=&format=webp&quality=lossless", q: "4-6 請回答 4 是什麼？", a: "口輪匝肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454842902545956917/image.png?ex=69528f89&is=69513e09&hm=dd4bd3748f37ae811e7a324070509ea277bf5c2e37ca9a5ad74f89164831a27b&=&format=webp&quality=lossless", q: "4-6 請回答 5 是什麼？", a: "降嘴角肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454842902545956917/image.png?ex=69528f89&is=69513e09&hm=dd4bd3748f37ae811e7a324070509ea277bf5c2e37ca9a5ad74f89164831a27b&=&format=webp&quality=lossless", q: "4-6 請回答 6 是什麼？", a: "頦肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454842902545956917/image.png?ex=69528f89&is=69513e09&hm=dd4bd3748f37ae811e7a324070509ea277bf5c2e37ca9a5ad74f89164831a27b&=&format=webp&quality=lossless", q: "4-6 請回答 7 是什麼？", a: "甲狀舌骨肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454842902545956917/image.png?ex=69528f89&is=69513e09&hm=dd4bd3748f37ae811e7a324070509ea277bf5c2e37ca9a5ad74f89164831a27b&=&format=webp&quality=lossless", q: "4-6 請回答 8 是什麼？", a: "胸骨舌骨肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454842902545956917/image.png?ex=69528f89&is=69513e09&hm=dd4bd3748f37ae811e7a324070509ea277bf5c2e37ca9a5ad74f89164831a27b&=&format=webp&quality=lossless", q: "4-6 請回答 9 是什麼？", a: "皺眉肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454842902545956917/image.png?ex=69528f89&is=69513e09&hm=dd4bd3748f37ae811e7a324070509ea277bf5c2e37ca9a5ad74f89164831a27b&=&format=webp&quality=lossless", q: "4-6 請回答 10 是什麼？", a: "顳肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454842902545956917/image.png?ex=69528f89&is=69513e09&hm=dd4bd3748f37ae811e7a324070509ea277bf5c2e37ca9a5ad74f89164831a27b&=&format=webp&quality=lossless", q: "4-6 請回答 11 是什麼？", a: "翼外肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454842902545956917/image.png?ex=69528f89&is=69513e09&hm=dd4bd3748f37ae811e7a324070509ea277bf5c2e37ca9a5ad74f89164831a27b&=&format=webp&quality=lossless", q: "4-6 請回答 12 是什麼？", a: "頰肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454842902545956917/image.png?ex=69528f89&is=69513e09&hm=dd4bd3748f37ae811e7a324070509ea277bf5c2e37ca9a5ad74f89164831a27b&=&format=webp&quality=lossless", q: "4-6 請回答 13 是什麼？", a: "胸鎖乳突肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454842902545956917/image.png?ex=69528f89&is=69513e09&hm=dd4bd3748f37ae811e7a324070509ea277bf5c2e37ca9a5ad74f89164831a27b&=&format=webp&quality=lossless", q: "4-6 請回答 14 是什麼？", a: "後斜角肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454842902545956917/image.png?ex=69528f89&is=69513e09&hm=dd4bd3748f37ae811e7a324070509ea277bf5c2e37ca9a5ad74f89164831a27b&=&format=webp&quality=lossless", q: "4-6 請回答 15 是什麼？", a: "中斜角肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454842902545956917/image.png?ex=69528f89&is=69513e09&hm=dd4bd3748f37ae811e7a324070509ea277bf5c2e37ca9a5ad74f89164831a27b&=&format=webp&quality=lossless", q: "4-6 請回答 16 是什麼？", a: "前斜角肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454842902545956917/image.png?ex=69528f89&is=69513e09&hm=dd4bd3748f37ae811e7a324070509ea277bf5c2e37ca9a5ad74f89164831a27b&=&format=webp&quality=lossless", q: "4-6 請回答 17 是什麼？", a: "鎖骨下肌" },
+	
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454843201310560337/image.png?ex=69528fd0&is=69513e50&hm=df2be9fcd8a2a2bd74ae52ac67875e9d75a2f7640b62b4a507c04a4fb77a89a1&=&format=webp&quality=lossless", q: "4-33 請回答 1 是什麼？", a: "内收拇肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454843201310560337/image.png?ex=69528fd0&is=69513e50&hm=df2be9fcd8a2a2bd74ae52ac67875e9d75a2f7640b62b4a507c04a4fb77a89a1&=&format=webp&quality=lossless", q: "4-33 請回答 2 是什麼？", a: "伸食指肌的肌腱" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454843201310560337/image.png?ex=69528fd0&is=69513e50&hm=df2be9fcd8a2a2bd74ae52ac67875e9d75a2f7640b62b4a507c04a4fb77a89a1&=&format=webp&quality=lossless", q: "4-33 請回答 3 是什麼？", a: "伸拇長肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454843201310560337/image.png?ex=69528fd0&is=69513e50&hm=df2be9fcd8a2a2bd74ae52ac67875e9d75a2f7640b62b4a507c04a4fb77a89a1&=&format=webp&quality=lossless", q: "4-33 請回答 4 是什麼？", a: "伸拇短肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454843201310560337/image.png?ex=69528fd0&is=69513e50&hm=df2be9fcd8a2a2bd74ae52ac67875e9d75a2f7640b62b4a507c04a4fb77a89a1&=&format=webp&quality=lossless", q: "4-33 請回答 5 是什麼？", a: "外展拇長肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454843201310560337/image.png?ex=69528fd0&is=69513e50&hm=df2be9fcd8a2a2bd74ae52ac67875e9d75a2f7640b62b4a507c04a4fb77a89a1&=&format=webp&quality=lossless", q: "4-33 請回答 6 是什麼？", a: "橈側伸腕短肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454843201310560337/image.png?ex=69528fd0&is=69513e50&hm=df2be9fcd8a2a2bd74ae52ac67875e9d75a2f7640b62b4a507c04a4fb77a89a1&=&format=webp&quality=lossless", q: "4-33 請回答 7 是什麼？", a: "橈側伸腕長肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454843201310560337/image.png?ex=69528fd0&is=69513e50&hm=df2be9fcd8a2a2bd74ae52ac67875e9d75a2f7640b62b4a507c04a4fb77a89a1&=&format=webp&quality=lossless", q: "4-33 請回答 8 是什麼？", a: "肱橈肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454843201310560337/image.png?ex=69528fd0&is=69513e50&hm=df2be9fcd8a2a2bd74ae52ac67875e9d75a2f7640b62b4a507c04a4fb77a89a1&=&format=webp&quality=lossless", q: "4-33 請回答 9 是什麼？", a: "第一背側骨間肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454843201310560337/image.png?ex=69528fd0&is=69513e50&hm=df2be9fcd8a2a2bd74ae52ac67875e9d75a2f7640b62b4a507c04a4fb77a89a1&=&format=webp&quality=lossless", q: "4-33 請回答 10 是什麼？", a: "外展小指肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454843201310560337/image.png?ex=69528fd0&is=69513e50&hm=df2be9fcd8a2a2bd74ae52ac67875e9d75a2f7640b62b4a507c04a4fb77a89a1&=&format=webp&quality=lossless", q: "4-33 請回答 11 是什麼？", a: "伸肌支持帶" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454843201310560337/image.png?ex=69528fd0&is=69513e50&hm=df2be9fcd8a2a2bd74ae52ac67875e9d75a2f7640b62b4a507c04a4fb77a89a1&=&format=webp&quality=lossless", q: "4-33 請回答 12 是什麼？", a: "伸小指肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454843201310560337/image.png?ex=69528fd0&is=69513e50&hm=df2be9fcd8a2a2bd74ae52ac67875e9d75a2f7640b62b4a507c04a4fb77a89a1&=&format=webp&quality=lossless", q: "4-33 請回答 13 是什麼？", a: "伸指肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454843201310560337/image.png?ex=69528fd0&is=69513e50&hm=df2be9fcd8a2a2bd74ae52ac67875e9d75a2f7640b62b4a507c04a4fb77a89a1&=&format=webp&quality=lossless", q: "4-33 請回答 14 是什麼？", a: "尺側伸腕肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454843201310560337/image.png?ex=69528fd0&is=69513e50&hm=df2be9fcd8a2a2bd74ae52ac67875e9d75a2f7640b62b4a507c04a4fb77a89a1&=&format=webp&quality=lossless", q: "4-33 請回答 15 是什麼？", a: "尺側屈腕肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454843201310560337/image.png?ex=69528fd0&is=69513e50&hm=df2be9fcd8a2a2bd74ae52ac67875e9d75a2f7640b62b4a507c04a4fb77a89a1&=&format=webp&quality=lossless", q: "4-33 請回答 16 是什麼？", a: "肘肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454843201310560337/image.png?ex=69528fd0&is=69513e50&hm=df2be9fcd8a2a2bd74ae52ac67875e9d75a2f7640b62b4a507c04a4fb77a89a1&=&format=webp&quality=lossless", q: "4-33 請回答 17 是什麼？", a: "肱三頭肌" },
+	
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454843401215414372/image.png?ex=69529000&is=69513e80&hm=0c393f00016f7af13cd2a2210f65cbbd4cef0ab069e72fb157b91bc31d2cf685&=&format=webp&quality=lossless", q: "4-15 請回答 1 是什麼？", a: "頭夾肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454843401215414372/image.png?ex=69529000&is=69513e80&hm=0c393f00016f7af13cd2a2210f65cbbd4cef0ab069e72fb157b91bc31d2cf685&=&format=webp&quality=lossless", q: "4-15 請回答 2 是什麼？", a: "提肩胛肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454843401215414372/image.png?ex=69529000&is=69513e80&hm=0c393f00016f7af13cd2a2210f65cbbd4cef0ab069e72fb157b91bc31d2cf685&=&format=webp&quality=lossless", q: "4-15 請回答 3 是什麼？", a: "小菱形肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454843401215414372/image.png?ex=69529000&is=69513e80&hm=0c393f00016f7af13cd2a2210f65cbbd4cef0ab069e72fb157b91bc31d2cf685&=&format=webp&quality=lossless", q: "4-15 請回答 4 是什麼？", a: "大菱形肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454843401215414372/image.png?ex=69529000&is=69513e80&hm=0c393f00016f7af13cd2a2210f65cbbd4cef0ab069e72fb157b91bc31d2cf685&=&format=webp&quality=lossless", q: "4-15 請回答 5 是什麼？", a: "髂肋肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454843401215414372/image.png?ex=69529000&is=69513e80&hm=0c393f00016f7af13cd2a2210f65cbbd4cef0ab069e72fb157b91bc31d2cf685&=&format=webp&quality=lossless", q: "4-15 請回答 6 是什麼？", a: "前鋸肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454843401215414372/image.png?ex=69529000&is=69513e80&hm=0c393f00016f7af13cd2a2210f65cbbd4cef0ab069e72fb157b91bc31d2cf685&=&format=webp&quality=lossless", q: "4-15 請回答 7 是什麼？", a: "肋間外肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454843401215414372/image.png?ex=69529000&is=69513e80&hm=0c393f00016f7af13cd2a2210f65cbbd4cef0ab069e72fb157b91bc31d2cf685&=&format=webp&quality=lossless", q: "4-15 請回答 8 是什麼？", a: "腹內斜肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454843401215414372/image.png?ex=69529000&is=69513e80&hm=0c393f00016f7af13cd2a2210f65cbbd4cef0ab069e72fb157b91bc31d2cf685&=&format=webp&quality=lossless", q: "4-15 請回答 9 是什麼？", a: "斜方肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454843401215414372/image.png?ex=69529000&is=69513e80&hm=0c393f00016f7af13cd2a2210f65cbbd4cef0ab069e72fb157b91bc31d2cf685&=&format=webp&quality=lossless", q: "4-15 請回答 10 是什麼？", a: "三角肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454843401215414372/image.png?ex=69529000&is=69513e80&hm=0c393f00016f7af13cd2a2210f65cbbd4cef0ab069e72fb157b91bc31d2cf685&=&format=webp&quality=lossless", q: "4-15 請回答 11 是什麼？", a: "棘肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454843401215414372/image.png?ex=69529000&is=69513e80&hm=0c393f00016f7af13cd2a2210f65cbbd4cef0ab069e72fb157b91bc31d2cf685&=&format=webp&quality=lossless", q: "4-15 請回答 12 是什麼？", a: "（背）最長肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454843401215414372/image.png?ex=69529000&is=69513e80&hm=0c393f00016f7af13cd2a2210f65cbbd4cef0ab069e72fb157b91bc31d2cf685&=&format=webp&quality=lossless", q: "4-15 請回答 13 是什麼？", a: "背闊肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454843401215414372/image.png?ex=69529000&is=69513e80&hm=0c393f00016f7af13cd2a2210f65cbbd4cef0ab069e72fb157b91bc31d2cf685&=&format=webp&quality=lossless", q: "4-15 請回答 14 是什麼？", a: "腹外斜肌" },
+	
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454843477421457408/image.png?ex=69529012&is=69513e92&hm=fa419a55e0be76ee6a8712334fa55ba58605f49e96ae2ab810bccdfa16e411c2&=&format=webp&quality=lossless", q: "4-50 請回答 1 是什麼？", a: "蹠肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454843477421457408/image.png?ex=69529012&is=69513e92&hm=fa419a55e0be76ee6a8712334fa55ba58605f49e96ae2ab810bccdfa16e411c2&=&format=webp&quality=lossless", q: "4-50 請回答 2 是什麼？", a: "腓腸肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454843477421457408/image.png?ex=69529012&is=69513e92&hm=fa419a55e0be76ee6a8712334fa55ba58605f49e96ae2ab810bccdfa16e411c2&=&format=webp&quality=lossless", q: "4-50 請回答 3 是什麼？", a: "比目魚肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454843477421457408/image.png?ex=69529012&is=69513e92&hm=fa419a55e0be76ee6a8712334fa55ba58605f49e96ae2ab810bccdfa16e411c2&=&format=webp&quality=lossless", q: "4-50 請回答 4 是什麼？", a: "跟腱" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454843477421457408/image.png?ex=69529012&is=69513e92&hm=fa419a55e0be76ee6a8712334fa55ba58605f49e96ae2ab810bccdfa16e411c2&=&format=webp&quality=lossless", q: "4-50 請回答 5 是什麼？", a: "外展小趾肌" },
+	
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454843566919651534/image.png?ex=69529028&is=69513ea8&hm=d0e15a29ade721971a058ececf1e60d9fb147e68d678182ee1e518305039a9a7&=&format=webp&quality=lossless", q: "4-27 請回答 1 是什麼？", a: "肱二頭肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454843566919651534/image.png?ex=69529028&is=69513ea8&hm=d0e15a29ade721971a058ececf1e60d9fb147e68d678182ee1e518305039a9a7&=&format=webp&quality=lossless", q: "4-27 請回答 2 是什麼？", a: "肱橈肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454843566919651534/image.png?ex=69529028&is=69513ea8&hm=d0e15a29ade721971a058ececf1e60d9fb147e68d678182ee1e518305039a9a7&=&format=webp&quality=lossless", q: "4-27 請回答 3 是什麼？", a: "橈側伸腕長肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454843566919651534/image.png?ex=69529028&is=69513ea8&hm=d0e15a29ade721971a058ececf1e60d9fb147e68d678182ee1e518305039a9a7&=&format=webp&quality=lossless", q: "4-27 請回答 4 是什麼？", a: "橈側伸腕短肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454843566919651534/image.png?ex=69529028&is=69513ea8&hm=d0e15a29ade721971a058ececf1e60d9fb147e68d678182ee1e518305039a9a7&=&format=webp&quality=lossless", q: "4-27 請回答 5 是什麼？", a: "外展拇長肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454843566919651534/image.png?ex=69529028&is=69513ea8&hm=d0e15a29ade721971a058ececf1e60d9fb147e68d678182ee1e518305039a9a7&=&format=webp&quality=lossless", q: "4-27 請回答 6 是什麼？", a: "外展拇短肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454843566919651534/image.png?ex=69529028&is=69513ea8&hm=d0e15a29ade721971a058ececf1e60d9fb147e68d678182ee1e518305039a9a7&=&format=webp&quality=lossless", q: "4-27 請回答 7 是什麼？", a: "屈拇短肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454843566919651534/image.png?ex=69529028&is=69513ea8&hm=d0e15a29ade721971a058ececf1e60d9fb147e68d678182ee1e518305039a9a7&=&format=webp&quality=lossless", q: "4-27 請回答 8 是什麼？", a: "肱肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454843566919651534/image.png?ex=69529028&is=69513ea8&hm=d0e15a29ade721971a058ececf1e60d9fb147e68d678182ee1e518305039a9a7&=&format=webp&quality=lossless", q: "4-27 請回答 9 是什麼？", a: "旋前圓肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454843566919651534/image.png?ex=69529028&is=69513ea8&hm=d0e15a29ade721971a058ececf1e60d9fb147e68d678182ee1e518305039a9a7&=&format=webp&quality=lossless", q: "4-27 請回答 10 是什麼？", a: "橈側屈腕肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454843566919651534/image.png?ex=69529028&is=69513ea8&hm=d0e15a29ade721971a058ececf1e60d9fb147e68d678182ee1e518305039a9a7&=&format=webp&quality=lossless", q: "4-27 請回答 11 是什麼？", a: "掌長肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454843566919651534/image.png?ex=69529028&is=69513ea8&hm=d0e15a29ade721971a058ececf1e60d9fb147e68d678182ee1e518305039a9a7&=&format=webp&quality=lossless", q: "4-27 請回答 12 是什麼？", a: "屈指淺肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454843566919651534/image.png?ex=69529028&is=69513ea8&hm=d0e15a29ade721971a058ececf1e60d9fb147e68d678182ee1e518305039a9a7&=&format=webp&quality=lossless", q: "4-27 請回答 13 是什麼？", a: "尺側屈腕肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454843566919651534/image.png?ex=69529028&is=69513ea8&hm=d0e15a29ade721971a058ececf1e60d9fb147e68d678182ee1e518305039a9a7&=&format=webp&quality=lossless", q: "4-27 請回答 14 是什麼？", a: "外展小指肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454843566919651534/image.png?ex=69529028&is=69513ea8&hm=d0e15a29ade721971a058ececf1e60d9fb147e68d678182ee1e518305039a9a7&=&format=webp&quality=lossless", q: "4-27 請回答 15 是什麼？", a: "屈小指短肌" },
+	
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454843809098891357/image.png?ex=69529061&is=69513ee1&hm=17f2411f06ac3cccf22979125b9fba7f7eb34613bcbf32ff722ce0cd7fe95a7a&=&format=webp&quality=lossless", q: "4-46 請回答 1 是什麼？", a: "腓腸肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454843809098891357/image.png?ex=69529061&is=69513ee1&hm=17f2411f06ac3cccf22979125b9fba7f7eb34613bcbf32ff722ce0cd7fe95a7a&=&format=webp&quality=lossless", q: "4-46 請回答 2 是什麼？", a: "比目魚肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454843809098891357/image.png?ex=69529061&is=69513ee1&hm=17f2411f06ac3cccf22979125b9fba7f7eb34613bcbf32ff722ce0cd7fe95a7a&=&format=webp&quality=lossless", q: "4-46 請回答 3 是什麼？", a: "脛骨前肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454843809098891357/image.png?ex=69529061&is=69513ee1&hm=17f2411f06ac3cccf22979125b9fba7f7eb34613bcbf32ff722ce0cd7fe95a7a&=&format=webp&quality=lossless", q: "4-46 請回答 4 是什麼？", a: "屈趾長肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454843809098891357/image.png?ex=69529061&is=69513ee1&hm=17f2411f06ac3cccf22979125b9fba7f7eb34613bcbf32ff722ce0cd7fe95a7a&=&format=webp&quality=lossless", q: "4-46 請回答 5 是什麼？", a: "伸踇長肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454843809098891357/image.png?ex=69529061&is=69513ee1&hm=17f2411f06ac3cccf22979125b9fba7f7eb34613bcbf32ff722ce0cd7fe95a7a&=&format=webp&quality=lossless", q: "4-46 請回答 6 是什麼？", a: "腓骨長肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454843809098891357/image.png?ex=69529061&is=69513ee1&hm=17f2411f06ac3cccf22979125b9fba7f7eb34613bcbf32ff722ce0cd7fe95a7a&=&format=webp&quality=lossless", q: "4-46 請回答 7 是什麼？", a: "腓骨短肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454843809098891357/image.png?ex=69529061&is=69513ee1&hm=17f2411f06ac3cccf22979125b9fba7f7eb34613bcbf32ff722ce0cd7fe95a7a&=&format=webp&quality=lossless", q: "4-46 請回答 8 是什麼？", a: "伸趾長肌" },
+	
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454843906561937610/image.png?ex=69529079&is=69513ef9&hm=356367cb82331f736d934e76d15f1f0db9af19fa66e9b93cddedd0b500785faf&=&format=webp&quality=lossless", q: "4-47 請回答 1 是什麼？", a: "伸趾長肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454843906561937610/image.png?ex=69529079&is=69513ef9&hm=356367cb82331f736d934e76d15f1f0db9af19fa66e9b93cddedd0b500785faf&=&format=webp&quality=lossless", q: "4-47 請回答 2 是什麼？", a: "腓骨長肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454843906561937610/image.png?ex=69529079&is=69513ef9&hm=356367cb82331f736d934e76d15f1f0db9af19fa66e9b93cddedd0b500785faf&=&format=webp&quality=lossless", q: "4-47 請回答 3 是什麼？", a: "腓骨短肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454843906561937610/image.png?ex=69529079&is=69513ef9&hm=356367cb82331f736d934e76d15f1f0db9af19fa66e9b93cddedd0b500785faf&=&format=webp&quality=lossless", q: "4-47 請回答 4 是什麼？", a: "腓骨第三肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454843906561937610/image.png?ex=69529079&is=69513ef9&hm=356367cb82331f736d934e76d15f1f0db9af19fa66e9b93cddedd0b500785faf&=&format=webp&quality=lossless", q: "4-47 請回答 5 是什麼？", a: "腓腸肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454843906561937610/image.png?ex=69529079&is=69513ef9&hm=356367cb82331f736d934e76d15f1f0db9af19fa66e9b93cddedd0b500785faf&=&format=webp&quality=lossless", q: "4-47 請回答 6 是什麼？", a: "比目魚肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454843906561937610/image.png?ex=69529079&is=69513ef9&hm=356367cb82331f736d934e76d15f1f0db9af19fa66e9b93cddedd0b500785faf&=&format=webp&quality=lossless", q: "4-47 請回答 7 是什麼？", a: "跟腱" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454843906561937610/image.png?ex=69529079&is=69513ef9&hm=356367cb82331f736d934e76d15f1f0db9af19fa66e9b93cddedd0b500785faf&=&format=webp&quality=lossless", q: "4-47 請回答 8 是什麼？", a: "外展小趾肌" },
+	
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454844045242142777/image.png?ex=6952909a&is=69513f1a&hm=f7b2e661cdca616637cb69595e81dbb808b812c3629ce171faacbe8d9fb4a851&=&format=webp&quality=lossless", q: "4-42 請回答 1 是什麼？", a: "臀中肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454844045242142777/image.png?ex=6952909a&is=69513f1a&hm=f7b2e661cdca616637cb69595e81dbb808b812c3629ce171faacbe8d9fb4a851&=&format=webp&quality=lossless", q: "4-42 請回答 2 是什麼？", a: "半腱肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454844045242142777/image.png?ex=6952909a&is=69513f1a&hm=f7b2e661cdca616637cb69595e81dbb808b812c3629ce171faacbe8d9fb4a851&=&format=webp&quality=lossless", q: "4-42 請回答 3 是什麼？", a: "股二頭肌：長頭" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454844045242142777/image.png?ex=6952909a&is=69513f1a&hm=f7b2e661cdca616637cb69595e81dbb808b812c3629ce171faacbe8d9fb4a851&=&format=webp&quality=lossless", q: "4-42 請回答 4 是什麼？", a: "蹠肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454844045242142777/image.png?ex=6952909a&is=69513f1a&hm=f7b2e661cdca616637cb69595e81dbb808b812c3629ce171faacbe8d9fb4a851&=&format=webp&quality=lossless", q: "4-42 請回答 5 是什麼？", a: "腓腸肌：外側頭" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454844045242142777/image.png?ex=6952909a&is=69513f1a&hm=f7b2e661cdca616637cb69595e81dbb808b812c3629ce171faacbe8d9fb4a851&=&format=webp&quality=lossless", q: "4-42 請回答 6 是什麼？", a: "臀大肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454844045242142777/image.png?ex=6952909a&is=69513f1a&hm=f7b2e661cdca616637cb69595e81dbb808b812c3629ce171faacbe8d9fb4a851&=&format=webp&quality=lossless", q: "4-42 請回答 7 是什麼？", a: "內收大肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454844045242142777/image.png?ex=6952909a&is=69513f1a&hm=f7b2e661cdca616637cb69595e81dbb808b812c3629ce171faacbe8d9fb4a851&=&format=webp&quality=lossless", q: "4-42 請回答 8 是什麼？", a: "股薄肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454844045242142777/image.png?ex=6952909a&is=69513f1a&hm=f7b2e661cdca616637cb69595e81dbb808b812c3629ce171faacbe8d9fb4a851&=&format=webp&quality=lossless", q: "4-42 請回答 9 是什麼？", a: "半膜肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454844045242142777/image.png?ex=6952909a&is=69513f1a&hm=f7b2e661cdca616637cb69595e81dbb808b812c3629ce171faacbe8d9fb4a851&=&format=webp&quality=lossless", q: "4-42 請回答 10 是什麼？", a: "腓腸肌：內側頭" },
+	
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454844124124545055/image.png?ex=695290ac&is=69513f2c&hm=49fe81748abe236bdc57e879d77b9e6edcb405a1b7b5cd479fc8e8a813dc3161&=&format=webp&quality=lossless", q: "4-43 請回答 1 是什麼？", a: "臀中肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454844124124545055/image.png?ex=695290ac&is=69513f2c&hm=49fe81748abe236bdc57e879d77b9e6edcb405a1b7b5cd479fc8e8a813dc3161&=&format=webp&quality=lossless", q: "4-43 請回答 2 是什麼？", a: "下孖肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454844124124545055/image.png?ex=695290ac&is=69513f2c&hm=49fe81748abe236bdc57e879d77b9e6edcb405a1b7b5cd479fc8e8a813dc3161&=&format=webp&quality=lossless", q: "4-43 請回答 3 是什麼？", a: "股方肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454844124124545055/image.png?ex=695290ac&is=69513f2c&hm=49fe81748abe236bdc57e879d77b9e6edcb405a1b7b5cd479fc8e8a813dc3161&=&format=webp&quality=lossless", q: "4-43 請回答 4 是什麼？", a: "股外側肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454844124124545055/image.png?ex=695290ac&is=69513f2c&hm=49fe81748abe236bdc57e879d77b9e6edcb405a1b7b5cd479fc8e8a813dc3161&=&format=webp&quality=lossless", q: "4-43 請回答 5 是什麼？", a: "股二頭肌：短頭" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454844124124545055/image.png?ex=695290ac&is=69513f2c&hm=49fe81748abe236bdc57e879d77b9e6edcb405a1b7b5cd479fc8e8a813dc3161&=&format=webp&quality=lossless", q: "4-43 請回答 6 是什麼？", a: "梨狀肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454844124124545055/image.png?ex=695290ac&is=69513f2c&hm=49fe81748abe236bdc57e879d77b9e6edcb405a1b7b5cd479fc8e8a813dc3161&=&format=webp&quality=lossless", q: "4-43 請回答 7 是什麼？", a: "上孖肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454844124124545055/image.png?ex=695290ac&is=69513f2c&hm=49fe81748abe236bdc57e879d77b9e6edcb405a1b7b5cd479fc8e8a813dc3161&=&format=webp&quality=lossless", q: "4-43 請回答 8 是什麼？", a: "閉孔內肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454844124124545055/image.png?ex=695290ac&is=69513f2c&hm=49fe81748abe236bdc57e879d77b9e6edcb405a1b7b5cd479fc8e8a813dc3161&=&format=webp&quality=lossless", q: "4-43 請回答 9 是什麼？", a: "內收大肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454844124124545055/image.png?ex=695290ac&is=69513f2c&hm=49fe81748abe236bdc57e879d77b9e6edcb405a1b7b5cd479fc8e8a813dc3161&=&format=webp&quality=lossless", q: "4-43 請回答 10 是什麼？", a: "半膜肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454844124124545055/image.png?ex=695290ac&is=69513f2c&hm=49fe81748abe236bdc57e879d77b9e6edcb405a1b7b5cd479fc8e8a813dc3161&=&format=webp&quality=lossless", q: "4-43 請回答 11 是什麼？", a: "股薄肌" },
+	
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454844231221772520/image.png?ex=695290c6&is=69513f46&hm=7c1c1c0c98db0dd5feaa6b4ffd7dc243d3d1d015ac8795d2caa42a6e4555068b&=&format=webp&quality=lossless", q: "4-22 請回答 1 是什麼？", a: "斜方肌（切斷）" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454844231221772520/image.png?ex=695290c6&is=69513f46&hm=7c1c1c0c98db0dd5feaa6b4ffd7dc243d3d1d015ac8795d2caa42a6e4555068b&=&format=webp&quality=lossless", q: "4-22 請回答 2 是什麼？", a: "鎖骨下肌（切斷）" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454844231221772520/image.png?ex=695290c6&is=69513f46&hm=7c1c1c0c98db0dd5feaa6b4ffd7dc243d3d1d015ac8795d2caa42a6e4555068b&=&format=webp&quality=lossless", q: "4-22 請回答 3 是什麼？", a: "胸小肌（切斷）" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454844231221772520/image.png?ex=695290c6&is=69513f46&hm=7c1c1c0c98db0dd5feaa6b4ffd7dc243d3d1d015ac8795d2caa42a6e4555068b&=&format=webp&quality=lossless", q: "4-22 請回答 4 是什麼？", a: "三角肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454844231221772520/image.png?ex=695290c6&is=69513f46&hm=7c1c1c0c98db0dd5feaa6b4ffd7dc243d3d1d015ac8795d2caa42a6e4555068b&=&format=webp&quality=lossless", q: "4-22 請回答 5 是什麼？", a: "胸大肌（切斷）" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454844231221772520/image.png?ex=695290c6&is=69513f46&hm=7c1c1c0c98db0dd5feaa6b4ffd7dc243d3d1d015ac8795d2caa42a6e4555068b&=&format=webp&quality=lossless", q: "4-22 請回答 6 是什麼？", a: "喙肱肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454844231221772520/image.png?ex=695290c6&is=69513f46&hm=7c1c1c0c98db0dd5feaa6b4ffd7dc243d3d1d015ac8795d2caa42a6e4555068b&=&format=webp&quality=lossless", q: "4-22 請回答 7 是什麼？", a: "肱二頭肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454844231221772520/image.png?ex=695290c6&is=69513f46&hm=7c1c1c0c98db0dd5feaa6b4ffd7dc243d3d1d015ac8795d2caa42a6e4555068b&=&format=webp&quality=lossless", q: "4-22 請回答 8 是什麼？", a: "肱肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454844231221772520/image.png?ex=695290c6&is=69513f46&hm=7c1c1c0c98db0dd5feaa6b4ffd7dc243d3d1d015ac8795d2caa42a6e4555068b&=&format=webp&quality=lossless", q: "4-22 請回答 9 是什麼？", a: "肱橈肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454844231221772520/image.png?ex=695290c6&is=69513f46&hm=7c1c1c0c98db0dd5feaa6b4ffd7dc243d3d1d015ac8795d2caa42a6e4555068b&=&format=webp&quality=lossless", q: "4-22 請回答 10 是什麼？", a: "肩胛骨" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454844231221772520/image.png?ex=695290c6&is=69513f46&hm=7c1c1c0c98db0dd5feaa6b4ffd7dc243d3d1d015ac8795d2caa42a6e4555068b&=&format=webp&quality=lossless", q: "4-22 請回答 11 是什麼？", a: "肩胛下肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454844231221772520/image.png?ex=695290c6&is=69513f46&hm=7c1c1c0c98db0dd5feaa6b4ffd7dc243d3d1d015ac8795d2caa42a6e4555068b&=&format=webp&quality=lossless", q: "4-22 請回答 12 是什麼？", a: "大圓肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454844231221772520/image.png?ex=695290c6&is=69513f46&hm=7c1c1c0c98db0dd5feaa6b4ffd7dc243d3d1d015ac8795d2caa42a6e4555068b&=&format=webp&quality=lossless", q: "4-22 請回答 13 是什麼？", a: "背闊肌（切斷）" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454844231221772520/image.png?ex=695290c6&is=69513f46&hm=7c1c1c0c98db0dd5feaa6b4ffd7dc243d3d1d015ac8795d2caa42a6e4555068b&=&format=webp&quality=lossless", q: "4-22 請回答 14 是什麼？", a: "肱三頭肌：長頭" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454844231221772520/image.png?ex=695290c6&is=69513f46&hm=7c1c1c0c98db0dd5feaa6b4ffd7dc243d3d1d015ac8795d2caa42a6e4555068b&=&format=webp&quality=lossless", q: "4-22 請回答 15 是什麼？", a: "肱三頭肌：內側頭" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454844231221772520/image.png?ex=695290c6&is=69513f46&hm=7c1c1c0c98db0dd5feaa6b4ffd7dc243d3d1d015ac8795d2caa42a6e4555068b&=&format=webp&quality=lossless", q: "4-22 請回答 16 是什麼？", a: "旋前圓肌" },
+	
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454844329683193936/image.png?ex=695290dd&is=69513f5d&hm=70c18706cc151f1272808c9762b86fab48a8b5f7024edadddda94163475edbd1&=&format=webp&quality=lossless", q: "4-23 請回答 1 是什麼？", a: "肱橈肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454844329683193936/image.png?ex=695290dd&is=69513f5d&hm=70c18706cc151f1272808c9762b86fab48a8b5f7024edadddda94163475edbd1&=&format=webp&quality=lossless", q: "4-23 請回答 2 是什麼？", a: "肱肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454844329683193936/image.png?ex=695290dd&is=69513f5d&hm=70c18706cc151f1272808c9762b86fab48a8b5f7024edadddda94163475edbd1&=&format=webp&quality=lossless", q: "4-23 請回答 3 是什麼？", a: "肱二頭肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454844329683193936/image.png?ex=695290dd&is=69513f5d&hm=70c18706cc151f1272808c9762b86fab48a8b5f7024edadddda94163475edbd1&=&format=webp&quality=lossless", q: "4-23 請回答 4 是什麼？", a: "三角肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454844329683193936/image.png?ex=695290dd&is=69513f5d&hm=70c18706cc151f1272808c9762b86fab48a8b5f7024edadddda94163475edbd1&=&format=webp&quality=lossless", q: "4-23 請回答 5 是什麼？", a: "小圓肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454844329683193936/image.png?ex=695290dd&is=69513f5d&hm=70c18706cc151f1272808c9762b86fab48a8b5f7024edadddda94163475edbd1&=&format=webp&quality=lossless", q: "4-23 請回答 6 是什麼？", a: "肩胛棘" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454844329683193936/image.png?ex=695290dd&is=69513f5d&hm=70c18706cc151f1272808c9762b86fab48a8b5f7024edadddda94163475edbd1&=&format=webp&quality=lossless", q: "4-23 請回答 7 是什麼？", a: "斜方肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454844329683193936/image.png?ex=695290dd&is=69513f5d&hm=70c18706cc151f1272808c9762b86fab48a8b5f7024edadddda94163475edbd1&=&format=webp&quality=lossless", q: "4-23 請回答 8 是什麼？", a: "肘肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454844329683193936/image.png?ex=695290dd&is=69513f5d&hm=70c18706cc151f1272808c9762b86fab48a8b5f7024edadddda94163475edbd1&=&format=webp&quality=lossless", q: "4-23 請回答 9 是什麼？", a: "肱三頭肌：外側頭" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454844329683193936/image.png?ex=695290dd&is=69513f5d&hm=70c18706cc151f1272808c9762b86fab48a8b5f7024edadddda94163475edbd1&=&format=webp&quality=lossless", q: "4-23 請回答 10 是什麼？", a: "肱三頭肌：長頭" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454844329683193936/image.png?ex=695290dd&is=69513f5d&hm=70c18706cc151f1272808c9762b86fab48a8b5f7024edadddda94163475edbd1&=&format=webp&quality=lossless", q: "4-23 請回答 11 是什麼？", a: "大圓肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454844329683193936/image.png?ex=695290dd&is=69513f5d&hm=70c18706cc151f1272808c9762b86fab48a8b5f7024edadddda94163475edbd1&=&format=webp&quality=lossless", q: "4-23 請回答 12 是什麼？", a: "背闊肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454844329683193936/image.png?ex=695290dd&is=69513f5d&hm=70c18706cc151f1272808c9762b86fab48a8b5f7024edadddda94163475edbd1&=&format=webp&quality=lossless", q: "4-23 請回答 13 是什麼？", a: "棘下肌" },
+	
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454846598411452457/image.png?ex=695292fa&is=6951417a&hm=89a7b9d818753e66ff7149e66f02e13922741842851edc9997681575ef570bd3&=&format=webp&quality=lossless", q: "4-37 請回答 1 是什麼？", a: "腰大肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454846598411452457/image.png?ex=695292fa&is=6951417a&hm=89a7b9d818753e66ff7149e66f02e13922741842851edc9997681575ef570bd3&=&format=webp&quality=lossless", q: "4-37 請回答 2 是什麼？", a: "髂腰肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454846598411452457/image.png?ex=695292fa&is=6951417a&hm=89a7b9d818753e66ff7149e66f02e13922741842851edc9997681575ef570bd3&=&format=webp&quality=lossless", q: "4-37 請回答 3 是什麼？", a: "恥骨肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454846598411452457/image.png?ex=695292fa&is=6951417a&hm=89a7b9d818753e66ff7149e66f02e13922741842851edc9997681575ef570bd3&=&format=webp&quality=lossless", q: "4-37 請回答 4 是什麼？", a: "內收長肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454846598411452457/image.png?ex=695292fa&is=6951417a&hm=89a7b9d818753e66ff7149e66f02e13922741842851edc9997681575ef570bd3&=&format=webp&quality=lossless", q: "4-37 請回答 5 是什麼？", a: "股直肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454846598411452457/image.png?ex=695292fa&is=6951417a&hm=89a7b9d818753e66ff7149e66f02e13922741842851edc9997681575ef570bd3&=&format=webp&quality=lossless", q: "4-37 請回答 6 是什麼？", a: "股內側肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454846598411452457/image.png?ex=695292fa&is=6951417a&hm=89a7b9d818753e66ff7149e66f02e13922741842851edc9997681575ef570bd3&=&format=webp&quality=lossless", q: "4-37 請回答 7 是什麼？", a: "髂肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454846598411452457/image.png?ex=695292fa&is=6951417a&hm=89a7b9d818753e66ff7149e66f02e13922741842851edc9997681575ef570bd3&=&format=webp&quality=lossless", q: "4-37 請回答 8 是什麼？", a: "闊筋膜張肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454846598411452457/image.png?ex=695292fa&is=6951417a&hm=89a7b9d818753e66ff7149e66f02e13922741842851edc9997681575ef570bd3&=&format=webp&quality=lossless", q: "4-37 請回答 9 是什麼？", a: "縫匠肌" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454846598411452457/image.png?ex=695292fa&is=6951417a&hm=89a7b9d818753e66ff7149e66f02e13922741842851edc9997681575ef570bd3&=&format=webp&quality=lossless", q: "4-37 請回答 10 是什麼？", a: "髂脛束" },
+	{ img: "https://media.discordapp.net/attachments/1454838383921729598/1454846598411452457/image.png?ex=695292fa&is=6951417a&hm=89a7b9d818753e66ff7149e66f02e13922741842851edc9997681575ef570bd3&=&format=webp&quality=lossless", q: "4-37 請回答 11 是什麼？", a: "股外側肌" },
+	
+];
+
+let selected = [];
+let index = 0;
+let timeLeft = 20;
+let timer = null;
+let paused = false;
+
+/* DOM */
+const startPage = document.getElementById("startPage");
+const quizPage = document.getElementById("quizPage");
+const resultPage = document.getElementById("resultPage");
+
+const imgEl = document.getElementById("questionImage");
+const textEl = document.getElementById("questionText");
+const timerEl = document.getElementById("timer");
+const pauseBtn = document.getElementById("pauseBtn");
+const resultList = document.getElementById("resultList");
+/* 開始測試 */
+function startQuiz() {
+    selected = [...questions].sort(() => 0.5 - Math.random()).slice(0, 10);
+    index = 0;
+
+    startPage.style.display = "none";
+    quizPage.style.display = "flex";
+
+    showQuestion();
+}
+
+/* 顯示題目 */
+function showQuestion() {
+
+    if (index >= selected.length) {
+        showResult();
+        return;
+    }
+
+    timeLeft = 2;
+    paused = false;
+    pauseBtn.textContent = "暫停";
+
+    imgEl.src = selected[index].img;
+    textEl.textContent = selected[index].q;
+    timerEl.textContent = `剩餘 ${timeLeft} 秒`;
+
+    clearInterval(timer);
+    timer = setInterval(() => {
+        if (paused) return;
+
+        timeLeft--;
+        timerEl.textContent = `剩餘 ${timeLeft} 秒`;
+
+        if (timeLeft <= 0) {
+            index++;
+            showQuestion();
+        }
+    }, 1000);
+}
+
+/* 暫停 / 復原 */
+function togglePause() {
+    paused = !paused;
+    pauseBtn.textContent = paused ? "復原" : "暫停";
+}
+
+/* 結果頁 */
+function showResult() {
+    clearInterval(timer);
+    quizPage.style.display = "none";
+    resultPage.style.display = "flex";
+
+    resultList.innerHTML = selected.map((q, i) =>
+        `<li>第 ${i + 1} 題：${q.q} → <strong>${q.a}</strong></li>`
+    ).join("");
+}
+function restartQuiz() {
+    location.reload();
+}
+</script>
+
+</body>
+</html>
