@@ -72,7 +72,7 @@ body {
     position: relative;
     background: #ffffff;
     border-radius: 20px;
-    padding: clamp(24px, 6vw, 48px);
+    padding: clamp(24px, 6vw, 20px);
     width: 90%;
     max-width: 900px;
     box-shadow: 0 20px 40px rgba(0,0,0,0.1);
@@ -102,7 +102,7 @@ body {
 .quiz-container img {
     display: block;
     max-width: 100%;          /* 不超過卡片寬度 */
-    max-height: 40vh;         /* 垂直方向安全限制 */
+    max-height: 50vh;         /* 垂直方向安全限制 */
     width: auto;
     height: auto;
     object-fit: contain;
@@ -190,7 +190,7 @@ font-family: "Inter", system-ui, sans-serif !important;
 
 <!-- 開始頁 -->
 <div class="page" id="startPage">
-    <button class="start-btn" onclick="startQuiz()">開始測試</button>
+    <button class="start-btn" onclick="startQuiz()">開始 Start</button>
 </div>
 
 <!-- 測驗頁 -->
@@ -213,7 +213,7 @@ font-family: "Inter", system-ui, sans-serif !important;
         <h2>測驗結束｜正確答案</h2>
         <ul id="resultList"></ul>
     </div>
-	<button onclick="restartQuiz()" class="restart-btn">
+	<button style="margin-top:20px;" onclick="restartQuiz()" class="restart-btn">
         重新測試
     </button>
 </div>
@@ -841,7 +841,7 @@ function showResult() {
     resultPage.style.display = "flex";
 
     resultList.innerHTML = selected.map((q, i) =>
-        `<li>第 ${i + 1} 題：${q.q} → <strong>${q.a}</strong></li>`
+        `<li>(${i + 1}) ${q.q} → <strong>${q.a}</strong></li>`
     ).join("");
 }
 function restartQuiz() {
