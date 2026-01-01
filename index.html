@@ -842,10 +842,10 @@ function showResult() {
 
         return `
         <li class="${cls}">
+			<img src="${q.img}">
             <strong>${q.q}</strong><br>
             正確答案：${q.a}<br>
             ${useChoice ? "你的答案：" + (answerText || "未作答") : ""}
-            <img src="${q.img}">
         </li>
         <hr>`;
     }).join("");
@@ -866,4 +866,3 @@ function toggleImages() {
 
 </body>
 </html>
-
