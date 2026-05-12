@@ -276,6 +276,19 @@ function toggleImages() {
         img.style.display = (img.style.display === "block") ? "none" : "block";
     });
 }
+
+    // 禁用右鍵選單
+document.addEventListener('contextmenu', event => event.preventDefault());
+
+// 禁用特定快捷鍵 (如 Ctrl+C, Ctrl+U, F12)
+document.onkeydown = function(e) {
+    if (e.keyCode == 123) { // F12
+        return false;
+    }
+    if (e.ctrlKey && (e.keyCode == 'U'.charCodeAt(0) || e.keyCode == 'C'.charCodeAt(0))) {
+        return false;
+    }
+}
 </script>
 </body>
 </html>
