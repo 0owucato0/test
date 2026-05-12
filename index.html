@@ -3,14 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>測驗系統</title>
+<title>測驗系統 - 緩存增強版</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 
 <style>
-    /* 原有樣式保持不變 */
+    /* 原有樣式 */
     body { margin: 0; font-family: "Inter", system-ui, sans-serif; background: linear-gradient(180deg, #f6f7f9, #eceff3); }
-    .page { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 16px; }
+    .page { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 16px; position: relative; }
     .quiz-container, .result { width: 100%; max-width: 900px; background: #fff; border-radius: 20px; padding: 24px; box-shadow: 0 20px 40px rgba(0,0,0,.1); }
     .quiz-container img { display: block; margin: 0 auto; max-width: 100%; max-height: 60vh; object-fit: contain; }
     .question { font-size: clamp(1.4rem, 4vw, 1.9rem); font-weight: 600; margin: 20px 0; text-align: center; }
@@ -28,6 +28,27 @@
     .result img { display: none; width: 80%; margin-top: 10px; border-radius: 8px; }
     ul { list-style: none; padding: 0; }
     li { margin-bottom: 20px; padding: 10px; background: #fafafa; border-radius: 8px; }
+
+    /* 更新按鈕樣式 */
+    .update-btn {
+        position: fixed;
+        bottom: 20px;
+        left: 20px;
+        background: #fff;
+        color: #667085;
+        border: 1px solid #d0d5dd;
+        padding: 8px 12px;
+        font-size: 0.85rem;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        transition: all 0.2s;
+    }
+    .update-btn:hover { background: #f9fafb; color: #344054; }
+    .update-btn.loading svg { animation: spin 1s linear infinite; }
+    @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 </style>
 </head>
 
@@ -42,6 +63,11 @@
         <br><br>
         <button style="width:100%" onclick="startQuiz()">開始測試</button>
     </div>
+
+    <button class="update-btn" id="updateBtn" onclick="forceUpdate()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"></path><path d="M1 20v-6h6"></path><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+        更新題庫
+    </button>
 </div>
 
 <div class="page" id="quizPage" style="display:none;">
@@ -69,12 +95,11 @@
 </div>
 
 <script>
-/** * 請在此處填入你的 Google 試算表 CSV 連結 
- */
 const SPREADSHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQo7GuN_TnyDh5x_8AQhVhoj6jzTjeCIgMGQSVAhXOG5fhsn7PuBzQDvIAB5fg8NP16DJcvtqp5PFqU/pub?output=csv';
+const CACHE_KEY = 'quiz_data_cache';
 
-let questions = []; // 全域題庫
-let selected = [];  // 本次抽中題目
+let questions = []; 
+let selected = [];  
 let index = 0;
 let timeLimit = 20;
 let timer = null;
@@ -82,9 +107,6 @@ let paused = false;
 let useChoice = false;
 let userAnswers = [];
 
-/**
- * 解析 CSV 資料
- */
 function parseCSV(csvText) {
     const lines = csvText.split(/\r?\n/);
     const result = [];
@@ -102,55 +124,82 @@ function parseCSV(csvText) {
 }
 
 /**
- * 從雲端載入題庫
+ * 從網路抓取並存入暫存
  */
-async function loadCloudQuestions() {
+async function fetchAndCache() {
+    const btn = document.getElementById("updateBtn");
+    btn.classList.add("loading");
+    btn.innerText = "更新中...";
+
     try {
-        const response = await fetch(SPREADSHEET_CSV_URL);
-        if (!response.ok) throw new Error("網路請求失敗");
+        const response = await fetch(SPREADSHEET_CSV_URL + '&t=' + Date.now()); // 加時間戳防止瀏覽器快取
+        if (!response.ok) throw new Error("網路失敗");
         const csvData = await response.text();
-        questions = parseCSV(csvData);
-        if (questions.length === 0) alert("題庫是空的，請檢查試算表內容。");
-    } catch (error) {
-        console.error("載入失敗:", error);
-        alert("無法讀取資料，請確認「發佈到網路」已設定為「CSV」格式。");
+        const parsed = parseCSV(csvData);
+
+        if (parsed.length > 0) {
+            questions = parsed;
+            localStorage.setItem(CACHE_KEY, JSON.stringify(questions));
+            console.log("題庫已更新並儲存");
+            return true;
+        }
+    } catch (e) {
+        console.error(e);
+        return false;
+    } finally {
+        btn.classList.remove("loading");
+        btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"></path><path d="M1 20v-6h6"></path><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg> 更新題庫`;
     }
 }
 
 /**
- * 開始測驗
+ * 手動更新按鈕調用
  */
-async function startQuiz() {
-    if (questions.length === 0) {
-        await loadCloudQuestions();
+async function forceUpdate() {
+    const success = await fetchAndCache();
+    if (success) alert("題庫已更新至最新版本！");
+    else alert("更新失敗，請檢查網路連線。");
+}
+
+/**
+ * 初始化載入（優先讀取暫存）
+ */
+async function initQuestions() {
+    const cached = localStorage.getItem(CACHE_KEY);
+    if (cached) {
+        questions = JSON.parse(cached);
+        console.log("使用暫存題庫開始");
+    } else {
+        await fetchAndCache();
     }
+}
+
+async function startQuiz() {
+    if (questions.length === 0) await initQuestions();
     if (questions.length === 0) return;
 
     timeLimit = parseInt(document.getElementById("timeInput").value) || 20;
     useChoice = document.getElementById("choiceMode").checked;
     const count = parseInt(document.getElementById("questionCount").value) || 10;
 
-    // 隨機抽選題目
     selected = [...questions].sort(() => 0.5 - Math.random()).slice(0, count);
-
     index = 0;
     userAnswers = [];
     document.getElementById("startPage").style.display = "none";
     document.getElementById("quizPage").style.display = "flex";
-
     showQuestion();
 }
 
-/**
- * 顯示題目與產生關聯選項
- */
+// 預先加載題目
+initQuestions();
+
+/* ----- 剩餘邏輯 (showQuestion, nextQuestion, showResult...) 保持不變 ----- */
+
 function showQuestion() {
     if (index >= selected.length) return showResult();
-
     clearInterval(timer);
     paused = false;
     document.getElementById("pauseBtn").textContent = "暫停";
-
     const q = selected[index];
     document.getElementById("questionImage").src = q.img;
     document.getElementById("questionText").textContent = q.q;
@@ -158,27 +207,15 @@ function showQuestion() {
     optionsEl.innerHTML = "";
 
     if (useChoice) {
-        // --- 核心改動：取得相同圖片的答案作為干擾項 ---
-        let sameImgPool = questions
-            .filter(x => x.img === q.img && x.a !== q.a)
-            .map(x => x.a);
-        
-        // 去重
+        let sameImgPool = questions.filter(x => x.img === q.img && x.a !== q.a).map(x => x.a);
         sameImgPool = [...new Set(sameImgPool)];
-
-        // 隨機選 3 個
         let wrongs = sameImgPool.sort(() => 0.5 - Math.random()).slice(0, 3);
-
-        // 如果同圖答案不足 3 個，從全域補
         if (wrongs.length < 3) {
             const globalPool = [...new Set(questions.filter(x => x.a !== q.a && !wrongs.includes(x.a)).map(x => x.a))];
             const extra = globalPool.sort(() => 0.5 - Math.random()).slice(0, 3 - wrongs.length);
             wrongs = wrongs.concat(extra);
         }
-
-        // 合併洗牌
         const finalAnswers = [q.a, ...wrongs].sort(() => 0.5 - Math.random());
-
         finalAnswers.forEach((ans, i) => {
             const div = document.createElement("div");
             div.className = "option";
@@ -195,7 +232,6 @@ function showQuestion() {
     let sec = timeLimit;
     const timerEl = document.getElementById("timer");
     timerEl.textContent = `剩餘 ${sec} 秒`;
-
     timer = setInterval(() => {
         if (paused) return;
         sec--;
@@ -216,40 +252,21 @@ function nextQuestion() {
     showQuestion();
 }
 
-/**
- * 顯示結果
- */
 function showResult() {
     document.getElementById("quizPage").style.display = "none";
     document.getElementById("resultPage").style.display = "flex";
-
     let correctCount = 0;
     const resultList = document.getElementById("resultList");
-    
     resultList.innerHTML = selected.map((q, i) => {
         const ua = userAnswers[i];
         let cls = "unanswered";
         let userDisplay = "未作答";
-
         if (ua) {
             userDisplay = ua.label + " - " + ua.value;
-            if (ua.value === q.a) {
-                cls = "correct";
-                correctCount++;
-            } else {
-                cls = "wrong";
-            }
+            if (ua.value === q.a) { cls = "correct"; correctCount++; } else { cls = "wrong"; }
         }
-
-        return `
-            <li class="${cls}">
-                <img src="${q.img}">
-                <strong>${q.q}</strong><br>
-                正確答案：<span style="color:#1f9d55; font-weight:bold;">${q.a}</span><br>
-                ${useChoice ? "你的答案：" + userDisplay : ""}
-            </li>`;
+        return `<li class="${cls}"><img src="${q.img}"><strong>${q.q}</strong><br>正確答案：<span style="color:#1f9d55; font-weight:bold;">${q.a}</span><br>${useChoice ? "你的答案：" + userDisplay : ""}</li>`;
     }).join("");
-
     const percent = Math.round((correctCount / selected.length) * 100);
     document.getElementById("scoreText").textContent = `得分：${percent}% (答對 ${correctCount} / ${selected.length})`;
 }
@@ -260,6 +277,5 @@ function toggleImages() {
     });
 }
 </script>
-
 </body>
 </html>
