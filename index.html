@@ -28,6 +28,19 @@
     .result img { display: none; width: 80%; margin-top: 10px; border-radius: 8px; }
     ul { list-style: none; padding: 0; }
     li { margin-bottom: 20px; padding: 10px; background: #fafafa; border-radius: 8px; }
+    /* 禁用全域文字選取 */
+body {
+    -webkit-user-select: none;  /* Safari */
+    -ms-user-select: none;      /* IE 10+ */
+    user-select: none;          /* 標準語法 */
+}
+
+/* 如果有輸入框，要讓輸入框可以正常點擊（例如秒數設定） */
+input, textarea {
+    -webkit-user-select: text;
+    -ms-user-select: text;
+    user-select: text;
+}
 
     /* 更新按鈕樣式 */
     .update-btn {
