@@ -3,537 +3,80 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>測驗系統</title>
+<title>智能圖解測驗系統</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 
 <style>
-body {
-    margin: 0;
-    font-family: "Inter", system-ui, sans-serif;
-    background: linear-gradient(180deg, #f6f7f9, #eceff3);
-}
-
-.page {
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 16px;
-	box-shadow: 0 20px 40px rgba(0,0,0,.1);
-}
-
-.quiz-container, .result {
-
-    width: 100%;
-    max-width: 900px;
-    background: #fff;
-    border-radius: 20px;
-    padding: 24px;
-    box-shadow: 0 20px 40px rgba(0,0,0,.1);
-}
-.quiz-container img { display: block; margin: 0 auto; }
-img {
-    max-width: 100%;
-    max-height: 70vh;
-    object-fit: contain;
-    margin: 12px 0;
-}
-
-.question {
-    font-size: clamp(1.4rem, 4vw, 1.9rem);
-    font-weight: 600;
-    margin-bottom: 20px;
-    text-align: center;
-}
-
-.options {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 12px;
-    margin-bottom: 20px;
-}
-
-
-.option {
-    padding: 14px;
-    border-radius: 12px;
-    background: #f1f3f8;
-    cursor: pointer;
-    font-size: 1.1rem;
-}
-
-.option.selected {
-    background: #4f6ef7;
-    color: #fff;
-}
-
-.control {
-    display: flex;
-    gap: 10px;
-    justify-content: flex-end;
-    align-items: center;
-}
-
-.timer {
-    background: #2d2f36;
-    color: #fff;
-    padding: 10px 16px;
-    border-radius: 10px;
-    font-weight: 700;
-}
-
-button {
-    padding: 12px 28px;
-    border-radius: 14px;
-    border: none;
-    cursor: pointer;
-    font-size: 1.05rem;
-    background: #4f6ef7;
-    color: #fff;
-}
-
-button.secondary {
-    background: #e6e9ef;
-    color: #333;
-}
-
-.correct { color: #1f9d55; }
-.wrong { color: #d64545; }
-.unanswered { color: #000; }
-
-.result img {
-    display: none;
-}
+    /* 原有樣式保持不變 */
+    body { margin: 0; font-family: "Inter", system-ui, sans-serif; background: linear-gradient(180deg, #f6f7f9, #eceff3); }
+    .page { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 16px; }
+    .quiz-container, .result { width: 100%; max-width: 900px; background: #fff; border-radius: 20px; padding: 24px; box-shadow: 0 20px 40px rgba(0,0,0,.1); }
+    .quiz-container img { display: block; margin: 0 auto; max-width: 100%; max-height: 60vh; object-fit: contain; }
+    .question { font-size: clamp(1.4rem, 4vw, 1.9rem); font-weight: 600; margin: 20px 0; text-align: center; }
+    .options { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 20px; }
+    .option { padding: 16px; border-radius: 12px; background: #f1f3f8; cursor: pointer; font-size: 1.1rem; border: 2px solid transparent; transition: 0.2s; }
+    .option:hover { background: #e8ebf3; }
+    .option.selected { background: #4f6ef7; color: #fff; border-color: #3b5bdb; }
+    .control { display: flex; gap: 10px; justify-content: flex-end; align-items: center; }
+    .timer { background: #2d2f36; color: #fff; padding: 10px 16px; border-radius: 10px; font-weight: 700; min-width: 100px; text-align: center; }
+    button { padding: 12px 28px; border-radius: 14px; border: none; cursor: pointer; font-size: 1.05rem; background: #4f6ef7; color: #fff; font-weight: 600; }
+    button.secondary { background: #e6e9ef; color: #333; }
+    .correct { color: #1f9d55; border-left: 5px solid #1f9d55; padding-left: 10px; }
+    .wrong { color: #d64545; border-left: 5px solid #d64545; padding-left: 10px; }
+    .unanswered { color: #777; border-left: 5px solid #ccc; padding-left: 10px; }
+    .result img { display: none; width: 150px; margin-top: 10px; border-radius: 8px; }
+    ul { list-style: none; padding: 0; }
+    li { margin-bottom: 20px; padding: 10px; background: #fafafa; border-radius: 8px; }
 </style>
 </head>
 
 <body>
 
-<!-- ===== 首頁 ===== -->
 <div class="page" id="startPage">
-<div class="quiz-container" style="max-width: 300px;">
-    <h2>測驗設定</h2>
-
-    <p>
-        每題秒數：
-        <input id="timeInput" type="number" value="20" min="5"
-               style="font-size:1.1rem;padding:6px;width:80px;">
-    </p>
-	<p>
-    題目數量：
-    <input id="questionCount" type="number" value="10" min="1"
-           style="font-size:1.1rem;padding:6px;width:80px;">
-	</p>
-
-    <label>
-        <input type="checkbox" id="choiceMode">
-        顯示選擇題(ABCD)
-    </label>
-
-    <br><br>
-    <button onclick="startQuiz()">開始測試</button>
-</div>
+    <div class="quiz-container" style="max-width: 400px;">
+        <h2 style="text-align:center;">測驗系統設定</h2>
+        <p>1. 於試算表填寫題目<br>2. 檔案 > 發佈到網路 > 選擇 CSV<br>3. 貼上連結至代碼中</p>
+        <hr>
+        <p>每題秒數：<input id="timeInput" type="number" value="20" min="5" style="padding:6px;width:60px;"></p>
+        <p>題目數量：<input id="questionCount" type="number" value="10" min="1" style="padding:6px;width:60px;"></p>
+        <label><input type="checkbox" id="choiceMode" checked> 顯示選擇題模式</label>
+        <br><br>
+        <button style="width:100%" onclick="startQuiz()">開始測試</button>
+    </div>
 </div>
 
-<!-- ===== 測驗頁 ===== -->
 <div class="page" id="quizPage" style="display:none;">
     <div class="quiz-container">
-        <img id="questionImage">
-        <div class="question" id="questionText"></div>
-
+        <img id="questionImage" src="">
+        <div class="question" id="questionText">載入中...</div>
         <div class="options" id="options"></div>
-
         <div class="control">
             <div class="timer" id="timer"></div>
             <button class="secondary" id="pauseBtn" onclick="togglePause()">暫停</button>
-            <button onclick="nextQuestion()">Next</button>
+            <button onclick="nextQuestion()">下一題 (Next)</button>
         </div>
     </div>
 </div>
 
-<!-- ===== 結果頁 ===== -->
 <div class="page" id="resultPage" style="display:none;">
     <div class="result">
         <h2>測驗結果</h2>
-        <p id="scoreText"></p>
-
-        <button class="secondary" onclick="toggleImages()">
-            顯示 / 隱藏所有圖片
-        </button>
-
+        <h3 id="scoreText"></h3>
+        <button class="secondary" onclick="toggleImages()">顯示 / 隱藏圖片</button>
+        <hr>
         <ul id="resultList"></ul>
+        <button style="width:100%; margin-top:20px;" onclick="location.reload()">重新測試</button>
     </div>
-
-    <br>
-    <button onclick="location.reload()">重新測試</button>
 </div>
 
 <script>
-/* 題庫（可自行擴充） */
-const questions = [
-    {img: "https://i.meee.com.tw/2RkOf1E.jpg",q: "(圖5-3) 請問1是什麼?",a:"中央溝"},
-{img: "https://i.meee.com.tw/2RkOf1E.jpg",q: "(圖5-3) 請問2是什麼?",a:"前中央腦回"},
-{img: "https://i.meee.com.tw/2RkOf1E.jpg",q: "(圖5-3) 請問3是什麼?",a:"後中央腦回"},
-{img: "https://i.meee.com.tw/2RkOf1E.jpg",q: "(圖5-3) 請問4是什麼?",a:"額葉"},
-{img: "https://i.meee.com.tw/2RkOf1E.jpg",q: "(圖5-3) 請問5是什麼?",a:"側溝"},
-{img: "https://i.meee.com.tw/2RkOf1E.jpg",q: "(圖5-3) 請問6是什麼?",a:"顳葉"},
-{img: "https://i.meee.com.tw/2RkOf1E.jpg",q: "(圖5-3) 請問7是什麼?",a:"橋腦"},
-{img: "https://i.meee.com.tw/2RkOf1E.jpg",q: "(圖5-3) 請問8是什麼?",a:"延腦"},
-{img: "https://i.meee.com.tw/2RkOf1E.jpg",q: "(圖5-3) 請問9是什麼?",a:"頂葉"},
-{img: "https://i.meee.com.tw/2RkOf1E.jpg",q: "(圖5-3) 請問10是什麼?",a:"枕葉"},
-{img: "https://i.meee.com.tw/2RkOf1E.jpg",q: "(圖5-3) 請問11是什麼?",a:"橫裂"},
-{img: "https://i.meee.com.tw/2RkOf1E.jpg",q: "(圖5-3) 請問12是什麼?",a:"小腦"},
-{img: "https://i.meee.com.tw/bPze6fx.jpg",q: "(圖5-4) 請問1是什麼?",a:"中央溝"},
-{img: "https://i.meee.com.tw/bPze6fx.jpg",q: "(圖5-4) 請問2是什麼?",a:"前中央腦回"},
-{img: "https://i.meee.com.tw/bPze6fx.jpg",q: "(圖5-4) 請問3是什麼?",a:"後中央腦回"},
-{img: "https://i.meee.com.tw/bPze6fx.jpg",q: "(圖5-4) 請問4是什麼?",a:"額葉"},
-{img: "https://i.meee.com.tw/bPze6fx.jpg",q: "(圖5-4) 請問5是什麼?",a:"顳葉"},
-{img: "https://i.meee.com.tw/bPze6fx.jpg",q: "(圖5-4) 請問6是什麼?",a:"橋腦"},
-{img: "https://i.meee.com.tw/bPze6fx.jpg",q: "(圖5-4) 請問7是什麼?",a:"延腦"},
-{img: "https://i.meee.com.tw/bPze6fx.jpg",q: "(圖5-4) 請問8是什麼?",a:"頂葉"},
-{img: "https://i.meee.com.tw/bPze6fx.jpg",q: "(圖5-4) 請問9是什麼?",a:"枕葉"},
-{img: "https://i.meee.com.tw/bPze6fx.jpg",q: "(圖5-4) 請問10是什麼?",a:"小腦"},
-{img: "https://i.meee.com.tw/pQVjGtE.jpg",q: "(圖5-7) 請問1是什麼?",a:"丘腦/視丘"},
-{img: "https://i.meee.com.tw/pQVjGtE.jpg",q: "(圖5-7) 請問2是什麼?",a:"視神經(第二對)"},
-{img: "https://i.meee.com.tw/pQVjGtE.jpg",q: "(圖5-7) 請問3是什麼?",a:"視交叉"},
-{img: "https://i.meee.com.tw/pQVjGtE.jpg",q: "(圖5-7) 請問4是什麼?",a:"視徑"},
-{img: "https://i.meee.com.tw/pQVjGtE.jpg",q: "(圖5-7) 請問5是什麼?",a:"乳頭體"},
-{img: "https://i.meee.com.tw/pQVjGtE.jpg",q: "(圖5-7) 請問6是什麼?",a:"動眼神經(第三對)"},
-{img: "https://i.meee.com.tw/pQVjGtE.jpg",q: "(圖5-7) 請問7是什麼?",a:"舌下神經(第十二對)"},
-{img: "https://i.meee.com.tw/pQVjGtE.jpg",q: "(圖5-7) 請問8是什麼?",a:"小腦"},
-{img: "https://i.meee.com.tw/pQVjGtE.jpg",q: "(圖5-7) 請問9是什麼?",a:"中腦(大腦腳)"},
-{img: "https://i.meee.com.tw/pQVjGtE.jpg",q: "(圖5-7) 請問10是什麼?",a:"橋腦"},
-{img: "https://i.meee.com.tw/pQVjGtE.jpg",q: "(圖5-7) 請問11是什麼?",a:"延腦"},
-{img: "https://i.meee.com.tw/pQVjGtE.jpg",q: "(圖5-7) 請問12是什麼?",a:"前庭耳蝸神經(第八對)"},
-{img: "https://i.meee.com.tw/pQVjGtE.jpg",q: "(圖5-7) 請問13是什麼?",a:"顏面神經(第七對)"},
-{img: "https://i.meee.com.tw/pQVjGtE.jpg",q: "(圖5-7) 請問14是什麼?",a:"舌咽神經(第九對)與迷走神經(第十對)"},
-{img: "https://i.meee.com.tw/pQVjGtE.jpg",q: "(圖5-7) 請問15是什麼?",a:"脊髓"},
-{img: "https://i.meee.com.tw/oQoG7ub.jpg",q: "(圖5-9) 請問1是什麼?",a:"第三腦室"},
-{img: "https://i.meee.com.tw/oQoG7ub.jpg",q: "(圖5-9) 請問2是什麼?",a:"丘腦/視丘"},
-{img: "https://i.meee.com.tw/oQoG7ub.jpg",q: "(圖5-9) 請問3是什麼?",a:"松果腺"},
-{img: "https://i.meee.com.tw/oQoG7ub.jpg",q: "(圖5-9) 請問4是什麼?",a:"上丘"},
-{img: "https://i.meee.com.tw/oQoG7ub.jpg",q: "(圖5-9) 請問5是什麼?",a:"下丘"},
-{img: "https://i.meee.com.tw/oQoG7ub.jpg",q: "(圖5-9) 請問6是什麼?",a:"小腦腳"},
-{img: "https://i.meee.com.tw/oQoG7ub.jpg",q: "(圖5-9) 請問7是什麼?",a:"大腦腳"},
-{img: "https://i.meee.com.tw/oQoG7ub.jpg",q: "(圖5-9) 請問8是什麼?",a:"上小腦腳"},
-{img: "https://i.meee.com.tw/oQoG7ub.jpg",q: "(圖5-9) 請問9是什麼?",a:"中小腦腳"},
-{img: "https://i.meee.com.tw/oQoG7ub.jpg",q: "(圖5-9) 請問10是什麼?",a:"下小腦腳"},
-{img: "https://i.meee.com.tw/oQoG7ub.jpg",q: "(圖5-9) 請問11是什麼?",a:"第四腦室底"},
-{img: "https://i.meee.com.tw/oQoG7ub.jpg",q: "(圖5-9) 請問12是什麼?",a:"延腦"},
-{img: "https://i.meee.com.tw/GK2ozsO.jpg",q: "(圖5-12) 請問1是什麼?",a:"胼胝體"},
-{img: "https://i.meee.com.tw/GK2ozsO.jpg",q: "(圖5-12) 請問2是什麼?",a:"穹窿"},
-{img: "https://i.meee.com.tw/GK2ozsO.jpg",q: "(圖5-12) 請問3是什麼?",a:"下視丘/下丘腦"},
-{img: "https://i.meee.com.tw/GK2ozsO.jpg",q: "(圖5-12) 請問4是什麼?",a:"視交叉"},
-{img: "https://i.meee.com.tw/GK2ozsO.jpg",q: "(圖5-12) 請問5是什麼?",a:"大腦導水管"},
-{img: "https://i.meee.com.tw/GK2ozsO.jpg",q: "(圖5-12) 請問6是什麼?",a:"橋腦"},
-{img: "https://i.meee.com.tw/GK2ozsO.jpg",q: "(圖5-12) 請問7是什麼?",a:"延腦"},
-{img: "https://i.meee.com.tw/GK2ozsO.jpg",q: "(圖5-12) 請問8是什麼?",a:"大腦"},
-{img: "https://i.meee.com.tw/GK2ozsO.jpg",q: "(圖5-12) 請問9是什麼?",a:"側腦室"},
-{img: "https://i.meee.com.tw/GK2ozsO.jpg",q: "(圖5-12) 請問10是什麼?",a:"丘腦間連結"},
-{img: "https://i.meee.com.tw/GK2ozsO.jpg",q: "(圖5-12) 請問11是什麼?",a:"松果腺"},
-{img: "https://i.meee.com.tw/GK2ozsO.jpg",q: "(圖5-12) 請問12是什麼?",a:"四疊體"},
-{img: "https://i.meee.com.tw/GK2ozsO.jpg",q: "(圖5-12) 請問13是什麼?",a:"(小腦的)活樹"},
-{img: "https://i.meee.com.tw/GK2ozsO.jpg",q: "(圖5-12) 請問14是什麼?",a:"小腦"},
-{img: "https://i.meee.com.tw/GK2ozsO.jpg",q: "(圖5-12) 請問15是什麼?",a:"第四腦室"},
-{img: "https://i.meee.com.tw/x9RU5tb.jpg",q: "(圖5-14) 請問1是什麼?",a:"左大腦半球"},
-{img: "https://i.meee.com.tw/x9RU5tb.jpg",q: "(圖5-14) 請問2是什麼?",a:"靜脈竇匯流處"},
-{img: "https://i.meee.com.tw/x9RU5tb.jpg",q: "(圖5-14) 請問3是什麼?",a:"橫竇"},
-{img: "https://i.meee.com.tw/x9RU5tb.jpg",q: "(圖5-14) 請問4是什麼?",a:"左小腦半球"},
-{img: "https://i.meee.com.tw/x9RU5tb.jpg",q: "(圖5-14) 請問5是什麼?",a:"上矢狀竇"},
-{img: "https://i.meee.com.tw/x9RU5tb.jpg",q: "(圖5-14) 請問6是什麼?",a:"硬腦膜包覆著右大腦半球"},
-{img: "https://i.meee.com.tw/x9RU5tb.jpg",q: "(圖5-14) 請問7是什麼?",a:"硬腦膜包覆著右小腦半球"},
-{img: "https://i.meee.com.tw/rREIL8K.jpg",q: "(圖5-19) 請問1是什麼?",a:"下矢狀竇"},
-{img: "https://i.meee.com.tw/rREIL8K.jpg",q: "(圖5-19) 請問2是什麼?",a:"透明隔"},
-{img: "https://i.meee.com.tw/rREIL8K.jpg",q: "(圖5-19) 請問3是什麼?",a:"前大腦動脈"},
-{img: "https://i.meee.com.tw/rREIL8K.jpg",q: "(圖5-19) 請問4是什麼?",a:"室間孔"},
-{img: "https://i.meee.com.tw/rREIL8K.jpg",q: "(圖5-19) 請問5是什麼?",a:"丘腦間連結"},
-{img: "https://i.meee.com.tw/rREIL8K.jpg",q: "(圖5-19) 請問6是什麼?",a:"第三腦室"},
-{img: "https://i.meee.com.tw/rREIL8K.jpg",q: "(圖5-19) 請問7是什麼?",a:"竇匯"},
-{img: "https://i.meee.com.tw/rREIL8K.jpg",q: "(圖5-19) 請問8是什麼?",a:"直竇"},
-{img: "https://i.meee.com.tw/rREIL8K.jpg",q: "(圖5-19) 請問9是什麼?",a:"大腦導水管"},
-{img: "https://i.meee.com.tw/rREIL8K.jpg",q: "(圖5-19) 請問10是什麼?",a:"第四腦室"},
-{img: "https://i.meee.com.tw/aKcYZZy.jpg",q: "(圖5-21) 請問1是什麼?",a:"側腦室（前角）"},
-{img: "https://i.meee.com.tw/aKcYZZy.jpg",q: "(圖5-21) 請問2是什麼?",a:"尾核"},
-{img: "https://i.meee.com.tw/aKcYZZy.jpg",q: "(圖5-21) 請問3是什麼?",a:"殼核"},
-{img: "https://i.meee.com.tw/aKcYZZy.jpg",q: "(圖5-21) 請問4是什麼?",a:"蒼白球"},
-{img: "https://i.meee.com.tw/aKcYZZy.jpg",q: "(圖5-21) 請問5是什麼?",a:"第三腦室"},
-{img: "https://i.meee.com.tw/aKcYZZy.jpg",q: "(圖5-21) 請問6是什麼?",a:"松果腺"},
-{img: "https://i.meee.com.tw/aKcYZZy.jpg",q: "(圖5-21) 請問7是什麼?",a:"胼胝體（壓部）"},
-{img: "https://i.meee.com.tw/aKcYZZy.jpg",q: "(圖5-21) 請問8是什麼?",a:"側腦室（下角）"},
-{img: "https://i.meee.com.tw/aKcYZZy.jpg",q: "(圖5-21) 請問9是什麼?",a:"胼胝體（膝部）"},
-{img: "https://i.meee.com.tw/aKcYZZy.jpg",q: "(圖5-21) 請問10是什麼?",a:"透明隔"},
-{img: "https://i.meee.com.tw/aKcYZZy.jpg",q: "(圖5-21) 請問11是什麼?",a:"內囊（前肢）"},
-{img: "https://i.meee.com.tw/aKcYZZy.jpg",q: "(圖5-21) 請問12是什麼?",a:"穹窿"},
-{img: "https://i.meee.com.tw/aKcYZZy.jpg",q: "(圖5-21) 請問13是什麼?",a:"內囊（後肢）"},
-{img: "https://i.meee.com.tw/aKcYZZy.jpg",q: "(圖5-21) 請問14是什麼?",a:"丘腦／視丘"},
-{img: "https://i.meee.com.tw/aKcYZZy.jpg",q: "(圖5-21) 請問15是什麼?",a:"上丘"},
-{img: "https://i.meee.com.tw/aKcYZZy.jpg",q: "(圖5-21) 請問16是什麼?",a:"下丘"},
-{img: "https://i.meee.com.tw/aKcYZZy.jpg",q: "(圖5-21) 請問17是什麼?",a:"視放射"},
-{img: "https://i.meee.com.tw/YMYFHyG.jpg",q: "(圖5-25) 請問1是什麼?",a:"橈神經"},
-{img: "https://i.meee.com.tw/YMYFHyG.jpg",q: "(圖5-25) 請問2是什麼?",a:"腋神經"},
-{img: "https://i.meee.com.tw/YMYFHyG.jpg",q: "(圖5-25) 請問3是什麼?",a:"尺神經"},
-{img: "https://i.meee.com.tw/YMYFHyG.jpg",q: "(圖5-25) 請問4是什麼?",a:"肌皮神經"},
-{img: "https://i.meee.com.tw/YMYFHyG.jpg",q: "(圖5-25) 請問5是什麼?",a:"正中神經"},
-{img: "https://i.meee.com.tw/322Avsv.jpg",q: "(圖5-29) 請問1是什麼?",a:"坐骨神經"},
-{img: "https://i.meee.com.tw/322Avsv.jpg",q: "(圖5-29) 請問2是什麼?",a:"總腓神經"},
-{img: "https://i.meee.com.tw/322Avsv.jpg",q: "(圖5-29) 請問3是什麼?",a:"脛神經"},
-{img: "https://i.meee.com.tw/7Bx3HgZ.jpg",q: "(圖5-34) 請問1是什麼?",a:"脊髓"},
-{img: "https://i.meee.com.tw/7Bx3HgZ.jpg",q: "(圖5-34) 請問2是什麼?",a:"腹根"},
-{img: "https://i.meee.com.tw/7Bx3HgZ.jpg",q: "(圖5-34) 請問3是什麼?",a:"背根"},
-{img: "https://i.meee.com.tw/7Bx3HgZ.jpg",q: "(圖5-34) 請問4是什麼?",a:"脊神經"},
-{img: "https://i.meee.com.tw/7Bx3HgZ.jpg",q: "(圖5-34) 請問5是什麼?",a:"交通枝"},
-{img: "https://i.meee.com.tw/7Bx3HgZ.jpg",q: "(圖5-34) 請問6是什麼?",a:"交感神經幹的神經節"},
-{img: "https://i.meee.com.tw/7Bx3HgZ.jpg",q: "(圖5-34) 請問7是什麼?",a:"椎體"},
-{img: "https://i.meee.com.tw/7Bx3HgZ.jpg",q: "(圖5-34) 請問8是什麼?",a:"椎間孔"},
-{img: "https://i.meee.com.tw/7Bx3HgZ.jpg",q: "(圖5-34) 請問9是什麼?",a:"交感神經幹"},
-{img: "https://i.meee.com.tw/4EITD3P.jpg",q: "(圖5-37) 請問1是什麼?",a:"背正中溝"},
-{img: "https://i.meee.com.tw/4EITD3P.jpg",q: "(圖5-37) 請問2是什麼?",a:"背根"},
-{img: "https://i.meee.com.tw/4EITD3P.jpg",q: "(圖5-37) 請問3是什麼?",a:"側索"},
-{img: "https://i.meee.com.tw/4EITD3P.jpg",q: "(圖5-37) 請問4是什麼?",a:"腹角"},
-{img: "https://i.meee.com.tw/4EITD3P.jpg",q: "(圖5-37) 請問5是什麼?",a:"腹索"},
-{img: "https://i.meee.com.tw/4EITD3P.jpg",q: "(圖5-37) 請問6是什麼?",a:"中央管"},
-{img: "https://i.meee.com.tw/4EITD3P.jpg",q: "(圖5-37) 請問7是什麼?",a:"背索"},
-{img: "https://i.meee.com.tw/4EITD3P.jpg",q: "(圖5-37) 請問8是什麼?",a:"背角"},
-{img: "https://i.meee.com.tw/4EITD3P.jpg",q: "(圖5-37) 請問9是什麼?",a:"背根神經節"},
-{img: "https://i.meee.com.tw/4EITD3P.jpg",q: "(圖5-37) 請問10是什麼?",a:"脊神經"},
-{img: "https://i.meee.com.tw/4EITD3P.jpg",q: "(圖5-37) 請問11是什麼?",a:"腹根"},
-{img: "https://i.meee.com.tw/4EITD3P.jpg",q: "(圖5-37) 請問12是什麼?",a:"側角"},
-{img: "https://i.meee.com.tw/4EITD3P.jpg",q: "(圖5-37) 請問13是什麼?",a:"灰質連合"},
-{img: "https://i.meee.com.tw/4EITD3P.jpg",q: "(圖5-37) 請問14是什麼?",a:"腹正中裂"},
-{img: "https://i.meee.com.tw/hiTFXcX.jpg",q: "(圖7-1) 請問1是什麼?",a:"左鎖骨下動脈"},
-{img: "https://i.meee.com.tw/hiTFXcX.jpg",q: "(圖7-1) 請問2是什麼?",a:"左總頸動脈"},
-{img: "https://i.meee.com.tw/hiTFXcX.jpg",q: "(圖7-1) 請問3是什麼?",a:"頭臂動脈幹"},
-{img: "https://i.meee.com.tw/hiTFXcX.jpg",q: "(圖7-1) 請問4是什麼?",a:"右頭臂靜脈"},
-{img: "https://i.meee.com.tw/hiTFXcX.jpg",q: "(圖7-1) 請問5是什麼?",a:"主動脈弓"},
-{img: "https://i.meee.com.tw/hiTFXcX.jpg",q: "(圖7-1) 請問6是什麼?",a:"左頭臂靜脈"},
-{img: "https://i.meee.com.tw/hiTFXcX.jpg",q: "(圖7-1) 請問7是什麼?",a:"動脈韌帶"},
-{img: "https://i.meee.com.tw/hiTFXcX.jpg",q: "(圖7-1) 請問8是什麼?",a:"上腔靜脈"},
-{img: "https://i.meee.com.tw/hiTFXcX.jpg",q: "(圖7-1) 請問9是什麼?",a:"左肺動脈"},
-{img: "https://i.meee.com.tw/hiTFXcX.jpg",q: "(圖7-1) 請問10是什麼?",a:"左心耳"},
-{img: "https://i.meee.com.tw/hiTFXcX.jpg",q: "(圖7-1) 請問11是什麼?",a:"肺動脈幹"},
-{img: "https://i.meee.com.tw/hiTFXcX.jpg",q: "(圖7-1) 請問12是什麼?",a:"升主動脈"},
-{img: "https://i.meee.com.tw/hiTFXcX.jpg",q: "(圖7-1) 請問13是什麼?",a:"左邊緣動脈"},
-{img: "https://i.meee.com.tw/hiTFXcX.jpg",q: "(圖7-1) 請問14是什麼?",a:"迴旋動脈"},
-{img: "https://i.meee.com.tw/hiTFXcX.jpg",q: "(圖7-1) 請問15是什麼?",a:"右心耳"},
-{img: "https://i.meee.com.tw/hiTFXcX.jpg",q: "(圖7-1) 請問16是什麼?",a:"右冠狀動脈"},
-{img: "https://i.meee.com.tw/hiTFXcX.jpg",q: "(圖7-1) 請問17是什麼?",a:"大心靜脈"},
-{img: "https://i.meee.com.tw/hiTFXcX.jpg",q: "(圖7-1) 請問18是什麼?",a:"前心室間動脈"},
-{img: "https://i.meee.com.tw/hiTFXcX.jpg",q: "(圖7-1) 請問19是什麼?",a:"右心室"},
-{img: "https://i.meee.com.tw/hiTFXcX.jpg",q: "(圖7-1) 請問20是什麼?",a:"右邊緣動脈"},
-{img: "https://i.meee.com.tw/hiTFXcX.jpg",q: "(圖7-1) 請問21是什麼?",a:"左心室"},
-{img: "https://i.meee.com.tw/hiTFXcX.jpg",q: "(圖7-1) 請問22是什麼?",a:"(心)尖"},
-{img: "https://i.meee.com.tw/zcwTZRz.jpg",q: "(圖7-2) 請問1是什麼?",a:"左鎖骨下動脈"},
-{img: "https://i.meee.com.tw/zcwTZRz.jpg",q: "(圖7-2) 請問2是什麼?",a:"左總頸動脈"},
-{img: "https://i.meee.com.tw/zcwTZRz.jpg",q: "(圖7-2) 請問3是什麼?",a:"頭臂動脈幹"},
-{img: "https://i.meee.com.tw/zcwTZRz.jpg",q: "(圖7-2) 請問4是什麼?",a:"主動脈弓"},
-{img: "https://i.meee.com.tw/zcwTZRz.jpg",q: "(圖7-2) 請問5是什麼?",a:"上腔靜脈"},
-{img: "https://i.meee.com.tw/zcwTZRz.jpg",q: "(圖7-2) 請問6是什麼?",a:"右肺動脈"},
-{img: "https://i.meee.com.tw/zcwTZRz.jpg",q: "(圖7-2) 請問7是什麼?",a:"左肺靜脈"},
-{img: "https://i.meee.com.tw/zcwTZRz.jpg",q: "(圖7-2) 請問8是什麼?",a:"右肺靜脈"},
-{img: "https://i.meee.com.tw/zcwTZRz.jpg",q: "(圖7-2) 請問9是什麼?",a:"大心靜脈"},
-{img: "https://i.meee.com.tw/zcwTZRz.jpg",q: "(圖7-2) 請問10是什麼?",a:"左心室後靜脈"},
-{img: "https://i.meee.com.tw/zcwTZRz.jpg",q: "(圖7-2) 請問11是什麼?",a:"冠狀竇"},
-{img: "https://i.meee.com.tw/zcwTZRz.jpg",q: "(圖7-2) 請問12是什麼?",a:"下腔靜脈"},
-{img: "https://i.meee.com.tw/zcwTZRz.jpg",q: "(圖7-2) 請問13是什麼?",a:"左心室"},
-{img: "https://i.meee.com.tw/zcwTZRz.jpg",q: "(圖7-2) 請問14是什麼?",a:"小心靜脈"},
-{img: "https://i.meee.com.tw/zcwTZRz.jpg",q: "(圖7-2) 請問15是什麼?",a:"後室間動脈"},
-{img: "https://i.meee.com.tw/zcwTZRz.jpg",q: "(圖7-2) 請問16是什麼?",a:"中心靜脈"},
-{img: "https://i.meee.com.tw/zcwTZRz.jpg",q: "(圖7-2) 請問17是什麼?",a:"右心室"},
-{img: "https://i.meee.com.tw/s1jGkrI.jpg",q: "(圖7-3) 請問1是什麼?",a:"左鎖骨下動脈"},
-{img: "https://i.meee.com.tw/s1jGkrI.jpg",q: "(圖7-3) 請問2是什麼?",a:"左總頸動脈"},
-{img: "https://i.meee.com.tw/s1jGkrI.jpg",q: "(圖7-3) 請問3是什麼?",a:"頭臂動脈幹"},
-{img: "https://i.meee.com.tw/s1jGkrI.jpg",q: "(圖7-3) 請問4是什麼?",a:"上腔靜脈"},
-{img: "https://i.meee.com.tw/s1jGkrI.jpg",q: "(圖7-3) 請問5是什麼?",a:"主動脈弓"},
-{img: "https://i.meee.com.tw/s1jGkrI.jpg",q: "(圖7-3) 請問6是什麼?",a:"卵圓窩"},
-{img: "https://i.meee.com.tw/s1jGkrI.jpg",q: "(圖7-3) 請問7是什麼?",a:"肺動脈幹"},
-{img: "https://i.meee.com.tw/s1jGkrI.jpg",q: "(圖7-3) 請問8是什麼?",a:"主動脈半月瓣"},
-{img: "https://i.meee.com.tw/s1jGkrI.jpg",q: "(圖7-3) 請問9是什麼?",a:"冠狀竇口"},
-{img: "https://i.meee.com.tw/s1jGkrI.jpg",q: "(圖7-3) 請問10是什麼?",a:"左心耳"},
-{img: "https://i.meee.com.tw/s1jGkrI.jpg",q: "(圖7-3) 請問11是什麼?",a:"肺動脈半月瓣"},
-{img: "https://i.meee.com.tw/s1jGkrI.jpg",q: "(圖7-3) 請問12是什麼?",a:"左房室瓣 / 二尖瓣 / 僧帽瓣"},
-{img: "https://i.meee.com.tw/s1jGkrI.jpg",q: "(圖7-3) 請問13是什麼?",a:"右房室瓣 / 三尖瓣"},
-{img: "https://i.meee.com.tw/s1jGkrI.jpg",q: "(圖7-3) 請問14是什麼?",a:"腱索"},
-{img: "https://i.meee.com.tw/s1jGkrI.jpg",q: "(圖7-3) 請問15是什麼?",a:"乳頭肌"},
-{img: "https://i.meee.com.tw/s1jGkrI.jpg",q: "(圖7-3) 請問16是什麼?",a:"室中隔"},
-{img: "https://i.meee.com.tw/s1jGkrI.jpg",q: "(圖7-3) 請問17是什麼?",a:"左心室肉柱"},
-{img: "https://i.meee.com.tw/s1jGkrI.jpg",q: "(圖7-3) 請問18是什麼?",a:"右心室"},
-{img: "https://i.meee.com.tw/s1jGkrI.jpg",q: "(圖7-3) 請問19是什麼?",a:"(心)尖"},
-{img: "https://i.meee.com.tw/IfhbkPO.jpg",q: "(圖7-12) 請問1是什麼?",a:"顏面動脈與靜脈"},
-{img: "https://i.meee.com.tw/IfhbkPO.jpg",q: "(圖7-12) 請問2是什麼?",a:"右與左總頸動脈"},
-{img: "https://i.meee.com.tw/IfhbkPO.jpg",q: "(圖7-12) 請問3是什麼?",a:"右鎖骨下靜脈"},
-{img: "https://i.meee.com.tw/IfhbkPO.jpg",q: "(圖7-12) 請問4是什麼?",a:"上腔靜脈"},
-{img: "https://i.meee.com.tw/IfhbkPO.jpg",q: "(圖7-12) 請問5是什麼?",a:"腋靜脈"},
-{img: "https://i.meee.com.tw/IfhbkPO.jpg",q: "(圖7-12) 請問6是什麼?",a:"頭靜脈"},
-{img: "https://i.meee.com.tw/IfhbkPO.jpg",q: "(圖7-12) 請問7是什麼?",a:"貴要靜脈"},
-{img: "https://i.meee.com.tw/IfhbkPO.jpg",q: "(圖7-12) 請問8是什麼?",a:"下腔靜脈"},
-{img: "https://i.meee.com.tw/IfhbkPO.jpg",q: "(圖7-12) 請問9是什麼?",a:"肘正中靜脈"},
-{img: "https://i.meee.com.tw/IfhbkPO.jpg",q: "(圖7-12) 請問10是什麼?",a:"髂總動脈與靜脈"},
-{img: "https://i.meee.com.tw/IfhbkPO.jpg",q: "(圖7-12) 請問11是什麼?",a:"尺動脈"},
-{img: "https://i.meee.com.tw/IfhbkPO.jpg",q: "(圖7-12) 請問12是什麼?",a:"外髂動脈與靜脈"},
-{img: "https://i.meee.com.tw/IfhbkPO.jpg",q: "(圖7-12) 請問13是什麼?",a:"橈動脈"},
-{img: "https://i.meee.com.tw/IfhbkPO.jpg",q: "(圖7-12) 請問14是什麼?",a:"旋髂淺靜脈"},
-{img: "https://i.meee.com.tw/IfhbkPO.jpg",q: "(圖7-12) 請問15是什麼?",a:"淺掌(動脈)弓"},
-{img: "https://i.meee.com.tw/IfhbkPO.jpg",q: "(圖7-12) 請問16是什麼?",a:"股靜脈"},
-{img: "https://i.meee.com.tw/IfhbkPO.jpg",q: "(圖7-12) 請問17是什麼?",a:"大隱靜脈"},
-{img: "https://i.meee.com.tw/IfhbkPO.jpg",q: "(圖7-12) 請問18是什麼?",a:"小隱靜脈"},
-{img: "https://i.meee.com.tw/IfhbkPO.jpg",q: "(圖7-12) 請問19是什麼?",a:"足背動脈"},
-{img: "https://i.meee.com.tw/IfhbkPO.jpg",q: "(圖7-12) 請問20是什麼?",a:"足背靜脈弓"},
-{img: "https://i.meee.com.tw/IfhbkPO.jpg",q: "(圖7-12) 請問21是什麼?",a:"淺顳動脈與靜脈"},
-{img: "https://i.meee.com.tw/IfhbkPO.jpg",q: "(圖7-12) 請問22是什麼?",a:"內頸靜脈"},
-{img: "https://i.meee.com.tw/IfhbkPO.jpg",q: "(圖7-12) 請問23是什麼?",a:"左鎖骨下動脈"},
-{img: "https://i.meee.com.tw/IfhbkPO.jpg",q: "(圖7-12) 請問24是什麼?",a:"主動脈"},
-{img: "https://i.meee.com.tw/IfhbkPO.jpg",q: "(圖7-12) 請問25是什麼?",a:"腋動脈"},
-{img: "https://i.meee.com.tw/IfhbkPO.jpg",q: "(圖7-12) 請問26是什麼?",a:"肺動脈幹"},
-{img: "https://i.meee.com.tw/IfhbkPO.jpg",q: "(圖7-12) 請問27是什麼?",a:"肱動脈"},
-{img: "https://i.meee.com.tw/IfhbkPO.jpg",q: "(圖7-12) 請問28是什麼?",a:"上腸繫膜動脈"},
-{img: "https://i.meee.com.tw/IfhbkPO.jpg",q: "(圖7-12) 請問29是什麼?",a:"腎動脈與靜脈"},
-{img: "https://i.meee.com.tw/IfhbkPO.jpg",q: "(圖7-12) 請問30是什麼?",a:"下腸繫膜動脈"},
-{img: "https://i.meee.com.tw/IfhbkPO.jpg",q: "(圖7-12) 請問31是什麼?",a:"髂內動脈與靜脈"},
-{img: "https://i.meee.com.tw/IfhbkPO.jpg",q: "(圖7-12) 請問32是什麼?",a:"外側旋股動脈的上升枝"},
-{img: "https://i.meee.com.tw/IfhbkPO.jpg",q: "(圖7-12) 請問33是什麼?",a:"外側旋股動脈的下降枝"},
-{img: "https://i.meee.com.tw/IfhbkPO.jpg",q: "(圖7-12) 請問34是什麼?",a:"股動脈"},
-{img: "https://i.meee.com.tw/IfhbkPO.jpg",q: "(圖7-12) 請問35是什麼?",a:"膕動脈"},
-{img: "https://i.meee.com.tw/IfhbkPO.jpg",q: "(圖7-12) 請問36是什麼?",a:"脛後動脈"},
-{img: "https://i.meee.com.tw/IfhbkPO.jpg",q: "(圖7-12) 請問37是什麼?",a:"脛前動脈"},
-{img: "https://i.meee.com.tw/IfhbkPO.jpg",q: "(圖7-12) 請問38是什麼?",a:"足背動脈"},
-{img: "https://i.meee.com.tw/nY03xHG.jpg",q: "(圖9-3) 請問1是什麼?",a:"大腦鐮"},
-{img: "https://i.meee.com.tw/nY03xHG.jpg",q: "(圖9-3) 請問2是什麼?",a:"眼的後腔"},
-{img: "https://i.meee.com.tw/nY03xHG.jpg",q: "(圖9-3) 請問3是什麼?",a:"嗅球"},
-{img: "https://i.meee.com.tw/nY03xHG.jpg",q: "(圖9-3) 請問4是什麼?",a:"中鼻甲"},
-{img: "https://i.meee.com.tw/nY03xHG.jpg",q: "(圖9-3) 請問5是什麼?",a:"鼻中隔"},
-{img: "https://i.meee.com.tw/nY03xHG.jpg",q: "(圖9-3) 請問6是什麼?",a:"下鼻甲"},
-{img: "https://i.meee.com.tw/nY03xHG.jpg",q: "(圖9-3) 請問7是什麼?",a:"舌"},
-{img: "https://i.meee.com.tw/nY03xHG.jpg",q: "(圖9-3) 請問8是什麼?",a:"雞冠"},
-{img: "https://i.meee.com.tw/nY03xHG.jpg",q: "(圖9-3) 請問9是什麼?",a:"篩骨氣室（篩竇）"},
-{img: "https://i.meee.com.tw/nY03xHG.jpg",q: "(圖9-3) 請問10是什麼?",a:"上頜竇"},
-{img: "https://i.meee.com.tw/nY03xHG.jpg",q: "(圖9-3) 請問11是什麼?",a:"鼻腔"},
-{img: "https://i.meee.com.tw/nY03xHG.jpg",q: "(圖9-3) 請問12是什麼?",a:"硬腭"},
-{img: "https://i.meee.com.tw/a5XUeYj.jpg",q: "(圖9-6) 請問1是什麼?",a:"會厭"},
-{img: "https://i.meee.com.tw/a5XUeYj.jpg",q: "(圖9-6) 請問2是什麼?",a:"舌骨大角"},
-{img: "https://i.meee.com.tw/a5XUeYj.jpg",q: "(圖9-6) 請問3是什麼?",a:"舌骨小角"},
-{img: "https://i.meee.com.tw/a5XUeYj.jpg",q: "(圖9-6) 請問4是什麼?",a:"舌骨體"},
-{img: "https://i.meee.com.tw/a5XUeYj.jpg",q: "(圖9-6) 請問5是什麼?",a:"甲狀舌骨肌"},
-{img: "https://i.meee.com.tw/a5XUeYj.jpg",q: "(圖9-6) 請問6是什麼?",a:"杓狀軟骨"},
-{img: "https://i.meee.com.tw/a5XUeYj.jpg",q: "(圖9-6) 請問7是什麼?",a:"甲狀軟骨"},
-{img: "https://i.meee.com.tw/a5XUeYj.jpg",q: "(圖9-6) 請問8是什麼?",a:"喉結"},
-{img: "https://i.meee.com.tw/a5XUeYj.jpg",q: "(圖9-6) 請問9是什麼?",a:"環甲韌帶"},
-{img: "https://i.meee.com.tw/a5XUeYj.jpg",q: "(圖9-6) 請問10是什麼?",a:"環甲肌"},
-{img: "https://i.meee.com.tw/a5XUeYj.jpg",q: "(圖9-6) 請問11是什麼?",a:"環狀軟骨"},
-{img: "https://i.meee.com.tw/a5XUeYj.jpg",q: "(圖9-6) 請問12是什麼?",a:"氣管軟骨"},
-{img: "https://i.meee.com.tw/Tq5h8GG.jpg",q: "(圖9-7) 請問1是什麼?",a:"舌"},
-{img: "https://i.meee.com.tw/Tq5h8GG.jpg",q: "(圖9-7) 請問2是什麼?",a:"舌骨"},
-{img: "https://i.meee.com.tw/Tq5h8GG.jpg",q: "(圖9-7) 請問3是什麼?",a:"甲狀舌骨肌"},
-{img: "https://i.meee.com.tw/Tq5h8GG.jpg",q: "(圖9-7) 請問4是什麼?",a:"會厭"},
-{img: "https://i.meee.com.tw/Tq5h8GG.jpg",q: "(圖9-7) 請問5是什麼?",a:"小角軟骨"},
-{img: "https://i.meee.com.tw/Tq5h8GG.jpg",q: "(圖9-7) 請問6是什麼?",a:"聲門裂"},
-{img: "https://i.meee.com.tw/Tq5h8GG.jpg",q: "(圖9-7) 請問7是什麼?",a:"杓狀軟骨"},
-{img: "https://i.meee.com.tw/Tq5h8GG.jpg",q: "(圖9-7) 請問8是什麼?",a:"甲狀軟骨"},
-{img: "https://i.meee.com.tw/Tq5h8GG.jpg",q: "(圖9-7) 請問9是什麼?",a:"環狀軟骨"},
-{img: "https://i.meee.com.tw/Tq5h8GG.jpg",q: "(圖9-7) 請問10是什麼?",a:"環杓後肌"},
-{img: "https://i.meee.com.tw/Tq5h8GG.jpg",q: "(圖9-7) 請問11是什麼?",a:"環狀氣管韌帶"},
-{img: "https://i.meee.com.tw/Tq5h8GG.jpg",q: "(圖9-7) 請問12是什麼?",a:"氣管軟骨"},
-{img: "https://i.meee.com.tw/Tq5h8GG.jpg",q: "(圖9-7) 請問13是什麼?",a:"氣管的肌肉部分"},
-{img: "https://i.meee.com.tw/8BF7zPB.jpg",q: "(圖9-9) 請問1是什麼?",a:"右肺的肺尖"},
-{img: "https://i.meee.com.tw/8BF7zPB.jpg",q: "(圖9-9) 請問2是什麼?",a:"右肺的上葉"},
-{img: "https://i.meee.com.tw/8BF7zPB.jpg",q: "(圖9-9) 請問3是什麼?",a:"右肺的水平裂"},
-{img: "https://i.meee.com.tw/8BF7zPB.jpg",q: "(圖9-9) 請問4是什麼?",a:"右肺的中葉"},
-{img: "https://i.meee.com.tw/8BF7zPB.jpg",q: "(圖9-9) 請問5是什麼?",a:"右肺的下葉"},
-{img: "https://i.meee.com.tw/8BF7zPB.jpg",q: "(圖9-9) 請問6是什麼?",a:"右肺的斜裂"},
-{img: "https://i.meee.com.tw/8BF7zPB.jpg",q: "(圖9-9) 請問7是什麼?",a:"左肺的肺尖"},
-{img: "https://i.meee.com.tw/8BF7zPB.jpg",q: "(圖9-9) 請問8是什麼?",a:"左肺的上葉"},
-{img: "https://i.meee.com.tw/8BF7zPB.jpg",q: "(圖9-9) 請問9是什麼?",a:"左肺的下葉"},
-{img: "https://i.meee.com.tw/8BF7zPB.jpg",q: "(圖9-9) 請問10是什麼?",a:"左肺的斜裂"},
-{img: "https://i.meee.com.tw/8BF7zPB.jpg",q: "(圖9-9) 請問11是什麼?",a:"心切迹"},
-{img: "https://i.meee.com.tw/UYehsn4.jpg",q: "(圖10-8) 請問1是什麼?",a:"肝臟左葉"},
-{img: "https://i.meee.com.tw/UYehsn4.jpg",q: "(圖10-8) 請問2是什麼?",a:"肝臟右葉"},
-{img: "https://i.meee.com.tw/UYehsn4.jpg",q: "(圖10-8) 請問3是什麼?",a:"鐮狀韌帶"},
-{img: "https://i.meee.com.tw/UYehsn4.jpg",q: "(圖10-8) 請問4是什麼?",a:"膽囊"},
-{img: "https://i.meee.com.tw/UYehsn4.jpg",q: "(圖10-8) 請問5是什麼?",a:"結腸帶"},
-{img: "https://i.meee.com.tw/UYehsn4.jpg",q: "(圖10-8) 請問6是什麼?",a:"小腸"},
-{img: "https://i.meee.com.tw/UYehsn4.jpg",q: "(圖10-8) 請問7是什麼?",a:"升結腸"},
-{img: "https://i.meee.com.tw/UYehsn4.jpg",q: "(圖10-8) 請問8是什麼?",a:"盲腸"},
-{img: "https://i.meee.com.tw/UYehsn4.jpg",q: "(圖10-8) 請問9是什麼?",a:"胃臟"},
-{img: "https://i.meee.com.tw/UYehsn4.jpg",q: "(圖10-8) 請問10是什麼?",a:"橫結腸"},
-{img: "https://i.meee.com.tw/UYehsn4.jpg",q: "(圖10-8) 請問11是什麼?",a:"降結腸"},
-{img: "https://i.meee.com.tw/UYehsn4.jpg",q: "(圖10-8) 請問12是什麼?",a:"乙狀結腸"},
-{img: "https://i.meee.com.tw/4Kz85Lj.jpg",q: "(圖10-9) 請問1是什麼?",a:"膽管"},
-{img: "https://i.meee.com.tw/4Kz85Lj.jpg",q: "(圖10-9) 請問2是什麼?",a:"胰臟的體部"},
-{img: "https://i.meee.com.tw/4Kz85Lj.jpg",q: "(圖10-9) 請問3是什麼?",a:"胰臟的頭部"},
-{img: "https://i.meee.com.tw/4Kz85Lj.jpg",q: "(圖10-9) 請問4是什麼?",a:"十二指腸"},
-{img: "https://i.meee.com.tw/4Kz85Lj.jpg",q: "(圖10-9) 請問5是什麼?",a:"食道"},
-{img: "https://i.meee.com.tw/4Kz85Lj.jpg",q: "(圖10-9) 請問6是什麼?",a:"胰臟的尾部"},
-{img: "https://i.meee.com.tw/4Kz85Lj.jpg",q: "(圖10-9) 請問7是什麼?",a:"胰臟的頸部"},
-{img: "https://i.meee.com.tw/4Kz85Lj.jpg",q: "(圖10-9) 請問8是什麼?",a:"空腸"},
-{img: "https://i.meee.com.tw/JjeTYBa.jpg",q: "(圖10-10) 請問1是什麼?",a:"肝臟方葉"},
-{img: "https://i.meee.com.tw/JjeTYBa.jpg",q: "(圖10-10) 請問2是什麼?",a:"肝圓韌帶"},
-{img: "https://i.meee.com.tw/JjeTYBa.jpg",q: "(圖10-10) 請問3是什麼?",a:"膽囊"},
-{img: "https://i.meee.com.tw/JjeTYBa.jpg",q: "(圖10-10) 請問4是什麼?",a:"肝臟右葉"},
-{img: "https://i.meee.com.tw/JjeTYBa.jpg",q: "(圖10-10) 請問5是什麼?",a:"肝臟左葉"},
-{img: "https://i.meee.com.tw/JjeTYBa.jpg",q: "(圖10-10) 請問6是什麼?",a:"膽囊管"},
-{img: "https://i.meee.com.tw/JjeTYBa.jpg",q: "(圖10-10) 請問7是什麼?",a:"總肝管"},
-{img: "https://i.meee.com.tw/JjeTYBa.jpg",q: "(圖10-10) 請問8是什麼?",a:"肝門靜脈"},
-{img: "https://i.meee.com.tw/JjeTYBa.jpg",q: "(圖10-10) 請問9是什麼?",a:"肝總動脈"},
-{img: "https://i.meee.com.tw/JjeTYBa.jpg",q: "(圖10-10) 請問10是什麼?",a:"膽管"},
-{img: "https://i.meee.com.tw/JjeTYBa.jpg",q: "(圖10-10) 請問11是什麼?",a:"下腔靜脈"},
-{img: "https://i.meee.com.tw/JjeTYBa.jpg",q: "(圖10-10) 請問12是什麼?",a:"胰臟"},
-{img: "https://i.meee.com.tw/JjeTYBa.jpg",q: "(圖10-10) 請問13是什麼?",a:"主胰管"},
-{img: "https://i.meee.com.tw/JjeTYBa.jpg",q: "(圖10-10) 請問14是什麼?",a:"十二指腸"},
-{img: "https://i.meee.com.tw/JjeTYBa.jpg",q: "(圖10-10) 請問15是什麼?",a:"上腸繫膜動脈"},
-{img: "https://i.meee.com.tw/JjeTYBa.jpg",q: "(圖10-10) 請問16是什麼?",a:"肝臟尾葉"},
-{img: "https://i.meee.com.tw/rxkSA3l.jpg",q: "(圖10-18) 請問1是什麼?",a:"黏膜層"},
-{img: "https://i.meee.com.tw/rxkSA3l.jpg",q: "(圖10-18) 請問2是什麼?",a:"黏膜下層"},
-{img: "https://i.meee.com.tw/rxkSA3l.jpg",q: "(圖10-18) 請問3是什麼?",a:"肌肉層"},
-{img: "https://i.meee.com.tw/rxkSA3l.jpg",q: "(圖10-18) 請問4是什麼?",a:"漿膜層或外膜層"},
-{img: "https://i.meee.com.tw/rxkSA3l.jpg",q: "(圖10-18) 請問5是什麼?",a:"杯狀細胞"},
-{img: "https://i.meee.com.tw/rxkSA3l.jpg",q: "(圖10-18) 請問6是什麼?",a:"絨毛"},
-{img: "https://i.meee.com.tw/rxkSA3l.jpg",q: "(圖10-18) 請問7是什麼?",a:"單層柱狀上皮"},
-{img: "https://i.meee.com.tw/rxkSA3l.jpg",q: "(圖10-18) 請問8是什麼?",a:"微血管"},
-{img: "https://i.meee.com.tw/rxkSA3l.jpg",q: "(圖10-18) 請問9是什麼?",a:"黏膜肌層"},
-{img: "https://i.meee.com.tw/rxkSA3l.jpg",q: "(圖10-18) 請問10是什麼?",a:"培氏斑"},
-{img: "https://i.meee.com.tw/rxkSA3l.jpg",q: "(圖10-18) 請問11是什麼?",a:"肌肉層的環肌"},
-{img: "https://i.meee.com.tw/rxkSA3l.jpg",q: "(圖10-18) 請問12是什麼?",a:"腸肌（神經）叢"},
-{img: "https://i.meee.com.tw/rxkSA3l.jpg",q: "(圖10-18) 請問13是什麼?",a:"肌肉層的縱肌"},
-{img: "https://i.meee.com.tw/aKEJTt8.jpg",q: "(圖11-3) 請問1是什麼?",a:"腎皮質"},
-{img: "https://i.meee.com.tw/aKEJTt8.jpg",q: "(圖11-3) 請問2是什麼?",a:"弓狀血管"},
-{img: "https://i.meee.com.tw/aKEJTt8.jpg",q: "(圖11-3) 請問3是什麼?",a:"葉間血管"},
-{img: "https://i.meee.com.tw/aKEJTt8.jpg",q: "(圖11-3) 請問4是什麼?",a:"腎元"},
-{img: "https://i.meee.com.tw/aKEJTt8.jpg",q: "(圖11-3) 請問5是什麼?",a:"腎錐體"},
-{img: "https://i.meee.com.tw/aKEJTt8.jpg",q: "(圖11-3) 請問6是什麼?",a:"腎動脈"},
-{img: "https://i.meee.com.tw/aKEJTt8.jpg",q: "(圖11-3) 請問7是什麼?",a:"腎靜脈"},
-{img: "https://i.meee.com.tw/aKEJTt8.jpg",q: "(圖11-3) 請問8是什麼?",a:"大腎盞"},
-{img: "https://i.meee.com.tw/aKEJTt8.jpg",q: "(圖11-3) 請問9是什麼?",a:"腎盂"},
-{img: "https://i.meee.com.tw/aKEJTt8.jpg",q: "(圖11-3) 請問10是什麼?",a:"小腎盞"},
-{img: "https://i.meee.com.tw/aKEJTt8.jpg",q: "(圖11-3) 請問11是什麼?",a:"輸尿管"},
-{img: "https://i.meee.com.tw/aKEJTt8.jpg",q: "(圖11-3) 請問12是什麼?",a:"腎乳頭"},
-{img: "https://i.meee.com.tw/aKEJTt8.jpg",q: "(圖11-3) 請問13是什麼?",a:"腎披膜"},
-{img: "https://i.meee.com.tw/aKEJTt8.jpg",q: "(圖11-3) 請問14是什麼?",a:"腎柱"},
-{img: "https://i.meee.com.tw/WwagQX2.jpg",q: "(圖11-5) 請問1是什麼?",a:"入球小動脈"},
-{img: "https://i.meee.com.tw/WwagQX2.jpg",q: "(圖11-5) 請問2是什麼?",a:"緻密斑"},
-{img: "https://i.meee.com.tw/WwagQX2.jpg",q: "(圖11-5) 請問3是什麼?",a:"足細胞"},
-{img: "https://i.meee.com.tw/WwagQX2.jpg",q: "(圖11-5) 請問4是什麼?",a:"遠曲小管"},
-{img: "https://i.meee.com.tw/WwagQX2.jpg",q: "(圖11-5) 請問5是什麼?",a:"出球小動脈"},
-{img: "https://i.meee.com.tw/WwagQX2.jpg",q: "(圖11-5) 請問6是什麼?",a:"腎絲球微血管"},
-{img: "https://i.meee.com.tw/WwagQX2.jpg",q: "(圖11-5) 請問7是什麼?",a:"腎絲球囊"},
-{img: "https://i.meee.com.tw/WwagQX2.jpg",q: "(圖11-5) 請問8是什麼?",a:"近曲小管"},
-{img: "https://i.meee.com.tw/vFCZjdp.jpg",q: "(圖11-6) 請問1是什麼?",a:"輸尿管"},
-{img: "https://i.meee.com.tw/vFCZjdp.jpg",q: "(圖11-6) 請問2是什麼?",a:"膀胱"},
-{img: "https://i.meee.com.tw/vFCZjdp.jpg",q: "(圖11-6) 請問3是什麼?",a:"前列腺部尿道"},
-{img: "https://i.meee.com.tw/vFCZjdp.jpg",q: "(圖11-6) 請問4是什麼?",a:"前列腺"},
-{img: "https://i.meee.com.tw/vFCZjdp.jpg",q: "(圖11-6) 請問5是什麼?",a:"膜部尿道"},
-{img: "https://i.meee.com.tw/vFCZjdp.jpg",q: "(圖11-6) 請問6是什麼?",a:"海綿體部尿道"},
-{img: "https://i.meee.com.tw/vFCZjdp.jpg",q: "(圖11-6) 請問7是什麼?",a:"海綿體"},
-{img: "https://i.meee.com.tw/vFCZjdp.jpg",q: "(圖11-6) 請問8是什麼?",a:"陰囊"},
-{img: "https://i.meee.com.tw/ZO0zgbt.jpg",q: "(圖11-7) 請問1是什麼?",a:"膀胱"},
-{img: "https://i.meee.com.tw/ZO0zgbt.jpg",q: "(圖11-7) 請問2是什麼?",a:"尿道"},
-{img: "https://i.meee.com.tw/ZO0zgbt.jpg",q: "(圖11-7) 請問3是什麼?",a:"外尿道口"},
-{img: "https://i.meee.com.tw/ZO0zgbt.jpg",q: "(圖11-7) 請問4是什麼?",a:"輸尿管"},
-	
-];
+/** * 請在此處填入你的 Google 試算表 CSV 連結 
+ */
+const SPREADSHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQo7GuN_TnyDh5x_8AQhVhoj6jzTjeCIgMGQSVAhXOG5fhsn7PuBzQDvIAB5fg8NP16DJcvtqp5PFqU/pub?output=csv';
 
-/* 狀態 */
-let selected = [];
+let questions = []; // 全域題庫
+let selected = [];  // 本次抽中題目
 let index = 0;
 let timeLimit = 20;
 let timer = null;
@@ -541,64 +84,118 @@ let paused = false;
 let useChoice = false;
 let userAnswers = [];
 
-/* DOM */
-const startPage = document.getElementById("startPage");
-const quizPage = document.getElementById("quizPage");
-const resultPage = document.getElementById("resultPage");
-const imgEl = document.getElementById("questionImage");
-const textEl = document.getElementById("questionText");
-const optionsEl = document.getElementById("options");
-const timerEl = document.getElementById("timer");
-const pauseBtn = document.getElementById("pauseBtn");
-const resultList = document.getElementById("resultList");
-const scoreText = document.getElementById("scoreText");
+/**
+ * 解析 CSV 資料
+ */
+function parseCSV(csvText) {
+    const lines = csvText.split(/\r?\n/);
+    const result = [];
+    for (let i = 1; i < lines.length; i++) {
+        const columns = lines[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
+        if (columns.length >= 3) {
+            result.push({
+                img: columns[0].replace(/"/g, '').trim(),
+                q: columns[1].replace(/"/g, '').trim(),
+                a: columns[2].replace(/"/g, '').trim()
+            });
+        }
+    }
+    return result;
+}
 
-/* 開始 */
-function startQuiz() {
-    timeLimit = parseInt(timeInput.value) || 20;
-    useChoice = choiceMode.checked;
+/**
+ * 從雲端載入題庫
+ */
+async function loadCloudQuestions() {
+    try {
+        const response = await fetch(SPREADSHEET_CSV_URL);
+        if (!response.ok) throw new Error("網路請求失敗");
+        const csvData = await response.text();
+        questions = parseCSV(csvData);
+        if (questions.length === 0) alert("題庫是空的，請檢查試算表內容。");
+    } catch (error) {
+        console.error("載入失敗:", error);
+        alert("無法讀取資料，請確認「發佈到網路」已設定為「CSV」格式。");
+    }
+}
 
-    const count = parseInt(questionCount.value) || 10; // 讀取題目數量，預設10
+/**
+ * 開始測驗
+ */
+async function startQuiz() {
+    if (questions.length === 0) {
+        await loadCloudQuestions();
+    }
+    if (questions.length === 0) return;
+
+    timeLimit = parseInt(document.getElementById("timeInput").value) || 20;
+    useChoice = document.getElementById("choiceMode").checked;
+    const count = parseInt(document.getElementById("questionCount").value) || 10;
+
+    // 隨機抽選題目
     selected = [...questions].sort(() => 0.5 - Math.random()).slice(0, count);
 
     index = 0;
     userAnswers = [];
-
-    startPage.style.display = "none";
-    quizPage.style.display = "flex";
+    document.getElementById("startPage").style.display = "none";
+    document.getElementById("quizPage").style.display = "flex";
 
     showQuestion();
 }
 
-
-/* 顯示題目 */
+/**
+ * 顯示題目與產生關聯選項
+ */
 function showQuestion() {
     if (index >= selected.length) return showResult();
 
     clearInterval(timer);
     paused = false;
-    pauseBtn.textContent = "暫停";
+    document.getElementById("pauseBtn").textContent = "暫停";
 
     const q = selected[index];
-    imgEl.src = q.img;
-    textEl.textContent = q.q;
+    document.getElementById("questionImage").src = q.img;
+    document.getElementById("questionText").textContent = q.q;
+    const optionsEl = document.getElementById("options");
     optionsEl.innerHTML = "";
 
     if (useChoice) {
-        const pool = selected.filter(x => x !== q).map(x => x.a);
-        const answers = [q.a, ...pool.sort(() => 0.5 - Math.random()).slice(0, 3)]
-            .sort(() => 0.5 - Math.random());
+        // --- 核心改動：取得相同圖片的答案作為干擾項 ---
+        let sameImgPool = questions
+            .filter(x => x.img === q.img && x.a !== q.a)
+            .map(x => x.a);
+        
+        // 去重
+        sameImgPool = [...new Set(sameImgPool)];
 
-        answers.forEach((ans, i) => {
+        // 隨機選 3 個
+        let wrongs = sameImgPool.sort(() => 0.5 - Math.random()).slice(0, 3);
+
+        // 如果同圖答案不足 3 個，從全域補
+        if (wrongs.length < 3) {
+            const globalPool = [...new Set(questions.filter(x => x.a !== q.a && !wrongs.includes(x.a)).map(x => x.a))];
+            const extra = globalPool.sort(() => 0.5 - Math.random()).slice(0, 3 - wrongs.length);
+            wrongs = wrongs.concat(extra);
+        }
+
+        // 合併洗牌
+        const finalAnswers = [q.a, ...wrongs].sort(() => 0.5 - Math.random());
+
+        finalAnswers.forEach((ans, i) => {
             const div = document.createElement("div");
             div.className = "option";
             div.textContent = `${String.fromCharCode(65 + i)}. ${ans}`;
-            div.onclick = () => selectOption(i, ans, div);
+            div.onclick = () => {
+                document.querySelectorAll(".option").forEach(o => o.classList.remove("selected"));
+                div.classList.add("selected");
+                userAnswers[index] = { label: String.fromCharCode(65 + i), value: ans };
+            };
             optionsEl.appendChild(div);
         });
     }
 
     let sec = timeLimit;
+    const timerEl = document.getElementById("timer");
     timerEl.textContent = `剩餘 ${sec} 秒`;
 
     timer = setInterval(() => {
@@ -609,23 +206,11 @@ function showQuestion() {
     }, 1000);
 }
 
-/* 選項 */
-function selectOption(i, ans, el) {
-    document.querySelectorAll(".option").forEach(o => o.classList.remove("selected"));
-    el.classList.add("selected");
-    userAnswers[index] = {
-        label: String.fromCharCode(65 + i),
-        value: ans
-    };
-}
-
-/* 暫停 / 復原 */
 function togglePause() {
     paused = !paused;
-    pauseBtn.textContent = paused ? "復原" : "暫停";
+    document.getElementById("pauseBtn").textContent = paused ? "復原" : "暫停";
 }
 
-/* 下一題 */
 function nextQuestion() {
     clearInterval(timer);
     if (!userAnswers[index]) userAnswers[index] = null;
@@ -633,18 +218,23 @@ function nextQuestion() {
     showQuestion();
 }
 
-/* 結果頁 */
+/**
+ * 顯示結果
+ */
 function showResult() {
-    quizPage.style.display = "none";
-    resultPage.style.display = "flex";
+    document.getElementById("quizPage").style.display = "none";
+    document.getElementById("resultPage").style.display = "flex";
 
     let correctCount = 0;
-
+    const resultList = document.getElementById("resultList");
+    
     resultList.innerHTML = selected.map((q, i) => {
         const ua = userAnswers[i];
         let cls = "unanswered";
+        let userDisplay = "未作答";
 
         if (ua) {
+            userDisplay = ua.label + " - " + ua.value;
             if (ua.value === q.a) {
                 cls = "correct";
                 correctCount++;
@@ -653,34 +243,22 @@ function showResult() {
             }
         }
 
-        // 判斷是否顯示「未作答」
-        let answerText = "";
-        if (ua) {
-            answerText = ua.label + " - " + ua.value;
-        } else if (useChoice) {
-            answerText = "未作答";
-        }
-
         return `
-        <li class="${cls}">
-			<img src="${q.img}">
-            <strong>${q.q}</strong><br>
-            正確答案：${q.a}<br>
-            ${useChoice ? "你的答案：" + (answerText || "未作答") : ""}
-        </li>
-        <hr>`;
+            <li class="${cls}">
+                <img src="${q.img}">
+                <strong>${q.q}</strong><br>
+                正確答案：<span style="color:#1f9d55; font-weight:bold;">${q.a}</span><br>
+                ${useChoice ? "你的答案：" + userDisplay : ""}
+            </li>`;
     }).join("");
 
     const percent = Math.round((correctCount / selected.length) * 100);
-    scoreText.textContent =
-        `答對 ${correctCount} / ${selected.length} 題（${percent}%）`;
+    document.getElementById("scoreText").textContent = `得分：${percent}% (答對 ${correctCount} / ${selected.length})`;
 }
 
-
-/* 顯示 / 隱藏所有圖片 */
 function toggleImages() {
-    document.querySelectorAll(".result img").forEach(img => {
-        img.style.display = img.style.display === "block" ? "none" : "block";
+    document.querySelectorAll("#resultList img").forEach(img => {
+        img.style.display = (img.style.display === "block") ? "none" : "block";
     });
 }
 </script>
