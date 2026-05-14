@@ -97,11 +97,12 @@
         justify-content: space-between; margin-top: 20px; 
     }
 
-    /* 手機版：進度條排在最前面 (order: 1) */
-    .progress-area {
-        position: relative; height: 50px; 
-        overflow: hidden; width: 100%; order: 1; 
-    }
+    /* 修改原有的 .progress-area，把 overflow 改為 visible */
+.progress-area {
+    position: relative; height: 50px; 
+    overflow: visible;
+    width: 100%; order: 1; 
+}
 
     .timer { 
         background: var(--nintendo-yellow); border: var(--border-thick); 
@@ -223,6 +224,33 @@
         from { transform: scale(0.8); opacity: 0; }
         to { transform: scale(1); opacity: 1; }
     }
+	
+	.pingu-speech {
+    position: absolute;
+    font-family: var(--font-main);
+    font-size: 0.8rem;
+    font-weight: 900;
+    color: var(--nintendo-dark);
+    //background: #fff;
+    border: 0px solid var(--nintendo-dark);
+    border-radius: 24px;
+    padding: 2px 2px;
+    pointer-events: none; /* 避免擋住後續的點擊 */
+    z-index: 100;
+    //box-shadow: 2px 2px 0 var(--nintendo-dark);
+    /* 動畫效果：浮現後往上飄並消失 */
+    animation: speechPop 1s forwards ease-out;
+	white-space: nowrap;
+	text-shadow: 1px 1px 1px rgba(255,255,255,1);
+	
+}
+
+@keyframes speechPop {
+    0% { transform: translateY(10px) scale(0.5); opacity: 0; }
+    20% { transform: translateY(-5px) scale(1.1); opacity: 1; }
+    80% { transform: translateY(-20px) scale(1); opacity: 1; }
+    100% { transform: translateY(-30px) scale(0.9); opacity: 0; }
+}
 </style>
 </head>
 
@@ -248,8 +276,8 @@
         
         <div class="control">
             <div class="progress-area">
-                <img id="pingu2" class="pingu" src="./pingu2.png" alt="Goal">
-                <img id="pingu1" class="pingu" src="./pingu1.png" alt="Runner">
+                <img id="pingu2" class="pingu" src="./pingu2.png" alt="Goal" onclick="pokePingu(event)" style="cursor: pointer;">
+                <img id="pingu1" class="pingu" src="./pingu1.png" alt="Runner" onclick="pokePingu(event)" style="cursor: pointer;">
             </div>
 
             <div class="timer" id="timer">20</div>
@@ -532,6 +560,53 @@ function openImageModal() {
 
 function closeImageModal() {
     document.getElementById("imageModal").style.display = "none";
+}
+
+// ================= 新增：戳企鵝的彩蛋互動 =================
+function pokePingu(event) {
+    const pingu = event.target;
+    const container = pingu.parentElement;
+    
+    // 1. 判斷當前圖片是不是暫停狀態
+    const isStopped = pingu.src.includes('pingu1_stop.png');
+    
+    // 2. 準備企鵝的台詞庫
+    const runningTexts = ["咪！", "加油！", "衝啊！", "咕嚕！", "快一點~","寶包比~", "Noot Noot!"];
+    let text = "";
+    
+    if (isStopped) {
+        text = "Zzz"; // 暫停時固定睡覺
+    } else {
+        // 跑步時隨機抽一句台詞
+        const randomIndex = Math.floor(Math.random() * runningTexts.length);
+        text = runningTexts[randomIndex];
+    }
+    
+    // 3. 建立對話框元素
+    const speech = document.createElement("div");
+    speech.className = "pingu-speech";
+    speech.textContent = text;
+    
+    // 4. 取得企鵝當前的即時 X 座標
+    const pinguLeft = parseFloat(window.getComputedStyle(pingu).left);
+    
+    // ================= 新增：產生隨機偏移量 =================
+    // X 軸隨機偏移 -15px 到 +15px
+    const randomOffsetX = (Math.random() - 0.5) * 20; 
+    // Y 軸隨機偏移 -10px 到 +10px
+    const randomOffsetY = (Math.random() - 0.5) * 20; 
+    
+    // 5. 設定對話框位置 (企鵝右上角基礎位置 + 隨機偏移)
+    speech.style.left = (pinguLeft + 20 + randomOffsetX) + "px"; 
+    speech.style.top = (-15 + randomOffsetY) + "px"; 
+    
+    // 6. 加入畫面上
+    container.appendChild(speech);
+    
+    // 7. 1秒後動畫結束，將元素從 DOM 移除避免佔用記憶體
+    setTimeout(() => {
+        speech.remove();
+    }, 1000);
 }
 </script>
 </body>
