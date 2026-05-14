@@ -278,7 +278,7 @@ function showQuestion() {
             timerEl.textContent = sec; 
             
             const startX = container.offsetWidth - 55;
-            const endX = 80; 
+            const endX = 20; 
             let progress = Math.min((timeLimit - sec) / timeLimit, 1);
             let currentLeft = startX - (startX - endX) * progress;
             
