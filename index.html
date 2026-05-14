@@ -380,7 +380,10 @@ function openModal(q, userAns) {
     `;
     document.getElementById("modalOverlay").style.display = "flex";
 }
+	
 function closeModal() { document.getElementById("modalOverlay").style.display = "none"; }
+
+	
 async function fetchAndCache() {
     const btn = document.getElementById("updateBtn");
     btn.classList.add("loading");
@@ -404,6 +407,28 @@ async function fetchAndCache() {
     } finally {
         btn.classList.remove("loading");
         btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"></path><path d="M1 20v-6h6"></path><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg> 更新題庫`;
+    }
+}
+
+/**
+ * 手動更新按鈕調用
+ */
+async function forceUpdate() {
+    const success = await fetchAndCache();
+    if (success) alert("題庫已更新至最新版本！");
+    else alert("更新失敗，請檢查網路連線。");
+}
+
+/**
+ * 初始化載入（優先讀取暫存）
+ */
+async function initQuestions() {
+    const cached = localStorage.getItem(CACHE_KEY);
+    if (cached) {
+        questions = JSON.parse(cached);
+        console.log("使用暫存題庫開始");
+    } else {
+        await fetchAndCache();
     }
 }
 </script>
