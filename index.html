@@ -170,6 +170,16 @@
         box-shadow: 5px 5px 0 var(--nintendo-dark);
 		font-family: var(--font-main);
     }
+
+	/* 隨機結果圖片樣式 */
+.result-pingu {
+    display: block;
+    margin: 0 auto 15px; /* 居中並與下方 scoreText 保持間距 */
+    max-width: 200px;
+    width: 60%;         /* 手機版自適應寬度 */
+    height: auto;
+    animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
 </style>
 </style>
 </head>
@@ -213,6 +223,7 @@
 <div class="page" id="resultPage" style="display:none;">
     <div class="result">
         <h2 style="text-align:center; font-size: 2.2rem; color: var(--nintendo-red);">測驗結果...</h2>
+		<div id="resultPinguContainer"></div>
         <h3 id="scoreText" style="text-align: center; margin-bottom: 15px;"></h3>
         <div id="resultGrid"></div>
         <button class="btn-red" style="width:100%; margin-top:25px;" onclick="location.reload()">RETRY ↺</button>
@@ -352,6 +363,18 @@ function nextQuestion() {
 function showResult() {
     document.getElementById("quizPage").style.display = "none";
     document.getElementById("resultPage").style.display = "flex";
+
+	document.getElementById("quizPage").style.display = "none";
+    document.getElementById("resultPage").style.display = "flex";
+    
+    // --- 新增：隨機抽圖片邏輯 ---
+    const pinguChars = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
+    const randomChar = pinguChars[Math.floor(Math.random() * pinguChars.length)];
+    const pinguContainer = document.getElementById("resultPinguContainer");
+    
+    // 生成圖片 HTML
+    pinguContainer.innerHTML = `<img src="./pingu_${randomChar}.png" class="result-pingu" alt="Result Pingu">`;
+	
     let correctCount = 0;
     const grid = document.getElementById("resultGrid");
     grid.innerHTML = "";
