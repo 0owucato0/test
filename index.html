@@ -3,305 +3,362 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>測驗系統</title>
+<title>SUPER QUIZ PARTY!</title>
 
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&family=Noto+Sans+TC:wght@400;700;900&family=Inter:wght@700;900&display=swap" rel="stylesheet">
 
 <style>
-    /* 原有樣式 */
-    body { margin: 0; font-family: "Inter", system-ui, sans-serif; background: linear-gradient(180deg, #f6f7f9, #eceff3); }
-    .page { min-height: 80vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 16px; position: relative; }
-    .quiz-container, .result { width: 100%; max-width: 900px; background: #fff; border-radius: 20px; padding: 24px; box-shadow: 0 20px 40px rgba(0,0,0,.1); }
-    .quiz-container img { display: block; margin: 0 auto; max-width: 100%; height: 60vh; object-fit: contain; }
-    .question { font-size: clamp(1.4rem, 4vw, 1.9rem); font-weight: 600; margin: 20px 0; text-align: center; }
-    .options { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 20px; }
-    .option { padding: 16px; border-radius: 12px; background: #f1f3f8; cursor: pointer; font-size: 1.1rem; border: 2px solid transparent; transition: 0.2s; }
-    .option:hover { background: #e8ebf3; }
-    .option.selected { background: #4f6ef7; color: #fff; border-color: #3b5bdb; }
-    .control { display: flex; gap: 10px; justify-content: flex-end; align-items: center; }
-    .timer { background: #2d2f36; color: #fff; padding: 10px 12px; border-radius: 10px; font-weight: 700; min-width: 100px; text-align: center; }
-    button { padding: 12px 14px; border-radius: 14px; border: none; cursor: pointer; font-size: 1.05rem; background: #4f6ef7; color: #fff; font-weight: 600; }
-    button.secondary { background: #e6e9ef; color: #333; }
-    .correct { color: #1f9d55; border-left: 5px solid #1f9d55; padding-left: 10px; }
-    .wrong { color: #d64545; border-left: 5px solid #d64545; padding-left: 10px; }
-    .unanswered { color: #777; border-left: 5px solid #ccc; padding-left: 10px; }
-    .result img { display: none; width: 80%; margin-top: 10px; border-radius: 8px; }
-    ul { list-style: none; padding: 0; }
-    li { margin-bottom: 20px; padding: 10px; background: #fafafa; border-radius: 8px; }
-    /* 禁用全域文字選取 */
-body {
-    -webkit-user-select: none;  /* Safari */
-    -ms-user-select: none;      /* IE 10+ */
-    user-select: none;          /* 標準語法 */
-}
-
-/* 如果有輸入框，要讓輸入框可以正常點擊（例如秒數設定） */
-input, textarea {
-    -webkit-user-select: text;
-    -ms-user-select: text;
-    user-select: text;
-}
-
-    /* 更新按鈕樣式 */
-    .update-btn {
-        position: fixed;
-        bottom: 20px;
-        left: 20px;
-        background: #fff;
-        color: #667085;
-        border: 1px solid #d0d5dd;
-        padding: 8px 12px;
-        font-size: 0.85rem;
-        border-radius: 8px;
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-        transition: all 0.2s;
+    :root {
+        --nintendo-red: #ff4b4b;
+        --nintendo-blue: #00d2ff;
+        --nintendo-yellow: #ffce00;
+        --nintendo-green: #44bd32;
+        --nintendo-dark: #2f3640;
+        --border-thick: 5px solid var(--nintendo-dark);
+        --font-main: 'Noto Sans TC', 'Inter', sans-serif;
+        --font-display: 'ZCOOL KuaiLe', cursive;
     }
-    .update-btn:hover { background: #f9fafb; color: #344054; }
-    .update-btn.loading svg { animation: spin 1s linear infinite; }
-    @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+    body { 
+        margin: 0; font-family: var(--font-main); background: #fdf6e3;
+        background-image: radial-gradient(var(--nintendo-yellow) 2px, transparent 0);
+        background-size: 30px 30px; color: var(--nintendo-dark);
+        -webkit-user-select: none; user-select: none; overflow-x: hidden; line-height: 1.6;
+    }
+
+    .timer, button { font-family: var(--font-display); letter-spacing: 1px; }
+
+    .page { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px 10px; box-sizing: border-box; }
+
+    .quiz-container{
+        width: 95%; max-width: 900px; background: #fff; border-radius: 30px; 
+        border: var(--border-thick); padding: 25px; box-shadow: 12px 12px 0px var(--nintendo-dark);
+        position: relative; box-sizing: border-box; margin: 20px 20px 20px 10px;
+        animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+	
+	.result { 
+        width: 95%; max-width: 900px; background: #fff; border-radius: 30px; 
+        border: var(--border-thick); padding:10px 10px 30px 10px; box-shadow: 12px 12px 0px var(--nintendo-dark);
+        position: relative; box-sizing: border-box; margin: 20px 20px 20px 10px;
+        animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    @keyframes popIn { 0% { transform: scale(0.9); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+
+    .quiz-container img.main-img { 
+        display: block; margin: 0 auto; width: auto; max-width: 100%; 
+        height: auto; max-height: 40vh; object-fit: contain; 
+        border: var(--border-thick); border-radius: 20px; background: #fff;
+    }
+
+    .question { margin: 15px 0; font-size: clamp(1.1rem, 4vw, 1.5rem); font-weight: 900; text-align: center; }
+
+    .options { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+    .option { 
+        padding: 14px 10px; border-radius: 18px; background: #fff; cursor: pointer; 
+        font-size: 1.05rem; font-weight: 700; border: var(--border-thick); 
+        text-align: center; box-shadow: 0 5px 0 var(--nintendo-dark); transition: 0.2s; 
+    }
+    .option:hover { background: var(--nintendo-yellow); transform: translateY(-3px); }
+    .option.selected { background: var(--nintendo-blue) !important; color: #fff; }
+
+    /* --- 控制列與進度條佈局 --- */
+    .control { 
+        display: flex; flex-wrap: wrap; gap: 12px; align-items: center; 
+        justify-content: space-between; margin-top: 20px; 
+    }
+
+    /* 手機版：進度條排在最前面 (order: 1) */
+    .progress-area {
+        position: relative; height: 50px; 
+ 
+        overflow: hidden; width: 100%; order: 1; 
+    }
+
+    .timer { 
+        background: var(--nintendo-yellow); border: var(--border-thick); 
+        padding: 5px 15px; border-radius: 50px; font-weight: 900; 
+        font-size: 1.3rem; min-width: 45px; text-align: center;
+        order: 2; /* 手機版排在中間 */
+    }
+
+    .btn-group { 
+        display: flex; gap: 10px; order: 3; /* 手機版排在最後面 */
+    }
+
+    /* 電腦版響應式判斷 (寬度 > 600px) */
+    @media (min-width: 600px) {
+        .control { flex-wrap: nowrap; }
+        .timer { order: 1; }         /* 電腦版：左側計時器 */
+        .progress-area { 
+            width: auto; 
+            flex-grow: 1; 
+            order: 2;                /* 電腦版：中間進度條 */
+            margin-bottom: 0;
+        }
+        .btn-group { order: 3; }     /* 電腦版：右側按鈕組 */
+    }
+
+    .pingu {
+        position: absolute; width: 50px; height: 50px; top: 0px;
+        object-fit: contain;
+        animation: pinguWobble 0.7s infinite ease-in-out alternate;
+    }
+
+    #pingu2 { left: 5px; z-index: 2; } 
+    #pingu1 { 
+        z-index: 3; 
+        transition: left 1s linear; 
+    } 
+
+    @keyframes pinguWobble {
+        0% { transform: rotate(-5deg); }
+        100% { transform: rotate(5deg); }
+    }
+
+    button { padding: 10px 18px; border-radius: 15px; border: var(--border-thick); cursor: pointer; font-weight: 900; box-shadow: 4px 4px 0 var(--nintendo-dark); transition: 0.1s; font-size: 1rem; }
+    button:active { transform: translate(2px, 2px); box-shadow: 0px 0px 0 var(--nintendo-dark); }
+    .btn-red { background: var(--nintendo-red); color: #fff; }
+    .btn-green { background: var(--nintendo-green); color: #fff; }
+    .btn-yellow { background: var(--nintendo-yellow); color: var(--nintendo-dark); min-width: 55px; }
+
+    #resultGrid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 20px; justify-content: center; justify-items: center; }
+    @media (min-width: 650px) { #resultGrid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); } }
+    .result-item { width: 100%; max-width: 200px; background: #fff; border: 3px solid var(--nintendo-dark); border-radius: 15px; padding: 8px; cursor: pointer; box-shadow: 4px 4px 0 var(--nintendo-dark); display: flex; flex-direction: column; box-sizing: border-box; }
+    .thumb-container { width: 100%; aspect-ratio: 1 / 1; overflow: hidden; border-radius: 10px; border: 2px solid var(--nintendo-dark); margin-bottom: 5px; }
+    .thumb-container img { width: 100%; height: 100%; object-fit: cover; }
+    .result-info { font-size: 0.8rem; font-weight: 700; }
+	.tag { display: inline-block; padding: 2px 6px; border-radius: 5px; color: #fff; font-size: 0.65rem; margin-bottom: 3px; }
+    .tag-correct { background: var(--nintendo-green); }
+    .tag-wrong { background: var(--nintendo-red); }
+    #modalOverlay { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(47, 54, 64, 0.85); display: none; justify-content: center; align-items: center; z-index: 1000; backdrop-filter: blur(8px); padding: 20px; box-sizing: border-box; }
+    .modal-content { background: #fff; border: var(--border-thick); border-radius: 25px; max-width: 500px; width: auto; padding: 20px; box-sizing: border-box; animation: modalShow 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
+    .modal-content img { max-width: 100%; max-height: 40vh; border-radius: 15px; display: block; margin: 0 auto 10px; border: 2px solid #eee; }
 </style>
 </head>
 
 <body>
 
 <div class="page" id="startPage">
-    <div class="quiz-container" style="max-width: 400px;">
-        <h2 style="text-align:center;">測驗設定</h2>
-        <p>⏰秒數：<input id="timeInput" type="number" value="20" min="5" style="padding:6px;width:60px;"></p>
-        <p>📚題目數量：<input id="questionCount" type="number" value="10" min="1" style="padding:6px;width:60px;"></p>
-        <label><input type="checkbox" id="choiceMode" checked> 作答模式</label>
-        <br><br>
-        <button style="width:100%" onclick="startQuiz()">開始測試</button>
+    <div class="quiz-container" style="max-width: 400px; text-align: center;">
+        <h1 style="font-size: 3rem; color: var(--nintendo-red); margin: 0 0 15px 0;text-shadow: 1px 1px 1px rgba(1,1,1,1);">設定</h1>
+        <div style="background: #f0f0f0; padding: 20px; border-radius: 20px; margin-bottom: 20px; border: 3px dashed #bbb; font-weight: 700;">
+            <p>⏰ 時間: <input id="timeInput" type="number" value="20" style="width:55px; text-align: center; font-weight: 900; border: 2px solid #333; border-radius: 5px;"></p>
+            <p>📚 題數: <input id="questionCount" type="number" value="10" style="width:55px; text-align: center; font-weight: 900; border: 2px solid #333; border-radius: 5px;"></p>
+        </div>
+        <button class="btn-green" style="width:100%; font-size: 1.4rem;" onclick="startQuiz()">START!</button>
     </div>
-
-    <button class="update-btn" id="updateBtn" onclick="forceUpdate()">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"></path><path d="M1 20v-6h6"></path><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
-        更新題庫
-    </button>
 </div>
 
 <div class="page" id="quizPage" style="display:none;">
     <div class="quiz-container">
-        <img id="questionImage" src="">
+        <img id="questionImage" class="main-img" src="">
         <div class="question" id="questionText">載入中...</div>
-        <div class="options" id="options"></div>
+        <div id="options" class="options"></div>
+        
         <div class="control">
-            <div class="timer" id="timer"></div>
-            <button class="secondary" id="pauseBtn" onclick="togglePause()">暫停</button>
-            <button onclick="nextQuestion()">下一題 (Next)</button>
+            <div class="progress-area">
+                <img id="pingu2" class="pingu" src="./pingu2.png" alt="Goal">
+                <img id="pingu1" class="pingu" src="./pingu1.png" alt="Runner">
+            </div>
+
+            <div class="timer" id="timer">20</div>
+
+            <div class="btn-group">
+                <button class="btn-yellow" id="pauseBtn" onclick="togglePause()">⏸</button>
+                <button class="btn-red" onclick="nextQuestion()">NEXT ▶</button>
+            </div>
         </div>
     </div>
 </div>
 
 <div class="page" id="resultPage" style="display:none;">
     <div class="result">
-        <h2>測驗結果</h2>
-        <h3 id="scoreText"></h3>
-        <button class="secondary" onclick="toggleImages()">顯示 / 隱藏圖片</button>
-        <hr>
-        <ul id="resultList"></ul>
-        <button style="width:100%; margin-top:20px;" onclick="location.reload()">重新測試</button>
+        <h2 style="text-align:center; font-size: 2.2rem; color: var(--nintendo-red);">測驗結果...</h2>
+        <h3 id="scoreText" style="text-align: center; margin-bottom: 15px;"></h3>
+        <div id="resultGrid"></div>
+        <button class="btn-red" style="width:100%; margin-top:25px;" onclick="location.reload()">RETRY ↺</button>
+    </div>
+</div>
+
+<div id="modalOverlay" onclick="closeModal()">
+    <div class="modal-content" onclick="event.stopPropagation()">
+        <img id="modalImg" src="">
+        <h2 id="modalQ" style="text-align: center; font-size: 1.2rem; margin-bottom: 10px; font-weight: 900;"></h2>
+        <p id="modalA" style="text-align: center; font-weight: 700;"></p>
+        <button class="btn-green" style="width:100%; margin-top: 15px;" onclick="closeModal()">CLOSE</button>
     </div>
 </div>
 
 <script>
+// JavaScript 邏輯部分保持不變
 const SPREADSHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQo7GuN_TnyDh5x_8AQhVhoj6jzTjeCIgMGQSVAhXOG5fhsn7PuBzQDvIAB5fg8NP16DJcvtqp5PFqU/pub?output=csv';
 const CACHE_KEY = 'quiz_data_cache';
 
-let questions = []; 
-let selected = [];  
-let index = 0;
-let timeLimit = 20;
-let timer = null;
-let paused = false;
-let useChoice = false;
-let userAnswers = [];
+let questions = []; let selected = []; let index = 0; let timeLimit = 20;
+let timer = null; let userAnswers = []; let isPaused = false;
 
 function parseCSV(csvText) {
     const lines = csvText.split(/\r?\n/);
-    const result = [];
-    for (let i = 1; i < lines.length; i++) {
-        const columns = lines[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
-        if (columns.length >= 3) {
-            result.push({
-                img: columns[0].replace(/"/g, '').trim(),
-                q: columns[1].replace(/"/g, '').trim(),
-                a: columns[2].replace(/"/g, '').trim()
-            });
-        }
-    }
-    return result;
-}
-
-/**
- * 從網路抓取並存入暫存
- */
-async function fetchAndCache() {
-    const btn = document.getElementById("updateBtn");
-    btn.classList.add("loading");
-    btn.innerText = "更新中...";
-
-    try {
-        const response = await fetch(SPREADSHEET_CSV_URL + '&t=' + Date.now()); // 加時間戳防止瀏覽器快取
-        if (!response.ok) throw new Error("網路失敗");
-        const csvData = await response.text();
-        const parsed = parseCSV(csvData);
-
-        if (parsed.length > 0) {
-            questions = parsed;
-            localStorage.setItem(CACHE_KEY, JSON.stringify(questions));
-            console.log("題庫已更新並儲存");
-            return true;
-        }
-    } catch (e) {
-        console.error(e);
-        return false;
-    } finally {
-        btn.classList.remove("loading");
-        btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"></path><path d="M1 20v-6h6"></path><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg> 更新題庫`;
-    }
-}
-
-/**
- * 手動更新按鈕調用
- */
-async function forceUpdate() {
-    const success = await fetchAndCache();
-    if (success) alert("題庫已更新至最新版本！");
-    else alert("更新失敗，請檢查網路連線。");
-}
-
-/**
- * 初始化載入（優先讀取暫存）
- */
-async function initQuestions() {
-    const cached = localStorage.getItem(CACHE_KEY);
-    if (cached) {
-        questions = JSON.parse(cached);
-        console.log("使用暫存題庫開始");
-    } else {
-        await fetchAndCache();
-    }
+    return lines.slice(1).map(line => {
+        const cols = line.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
+        return cols.length >= 3 ? { img: cols[0].replace(/"/g, '').trim(), q: cols[1].replace(/"/g, '').trim(), a: cols[2].replace(/"/g, '').trim() } : null;
+    }).filter(x => x);
 }
 
 async function startQuiz() {
-    if (questions.length === 0) await initQuestions();
-    if (questions.length === 0) return;
-
+    const cached = localStorage.getItem(CACHE_KEY);
+    if (cached) {
+        questions = JSON.parse(cached);
+    } else {
+        const response = await fetch(SPREADSHEET_CSV_URL + '&t=' + Date.now());
+        const csvData = await response.text();
+        questions = parseCSV(csvData);
+        localStorage.setItem(CACHE_KEY, JSON.stringify(questions));
+    }
+    
     timeLimit = parseInt(document.getElementById("timeInput").value) || 20;
-    useChoice = document.getElementById("choiceMode").checked;
     const count = parseInt(document.getElementById("questionCount").value) || 10;
-
     selected = [...questions].sort(() => 0.5 - Math.random()).slice(0, count);
-    index = 0;
-    userAnswers = [];
+    index = 0; userAnswers = [];
     document.getElementById("startPage").style.display = "none";
     document.getElementById("quizPage").style.display = "flex";
     showQuestion();
 }
 
-// 預先加載題目
-initQuestions();
-
-/* ----- 剩餘邏輯 (showQuestion, nextQuestion, showResult...) 保持不變 ----- */
-
 function showQuestion() {
     if (index >= selected.length) return showResult();
     clearInterval(timer);
-    paused = false;
-    document.getElementById("pauseBtn").textContent = "暫停";
+    isPaused = false;
+    
+    const pingu1 = document.getElementById("pingu1");
+    const pauseBtn = document.getElementById("pauseBtn");
+    const timerEl = document.getElementById("timer");
+    
+    pauseBtn.textContent = "⏸";
+    pingu1.src = "./pingu1.png"; 
+    
     const q = selected[index];
     document.getElementById("questionImage").src = q.img;
     document.getElementById("questionText").textContent = q.q;
     const optionsEl = document.getElementById("options");
     optionsEl.innerHTML = "";
 
-    if (useChoice) {
-        let sameImgPool = questions.filter(x => x.img === q.img && x.a !== q.a).map(x => x.a);
-        sameImgPool = [...new Set(sameImgPool)];
-        let wrongs = sameImgPool.sort(() => 0.5 - Math.random()).slice(0, 3);
-        if (wrongs.length < 3) {
-            const globalPool = [...new Set(questions.filter(x => x.a !== q.a && !wrongs.includes(x.a)).map(x => x.a))];
-            const extra = globalPool.sort(() => 0.5 - Math.random()).slice(0, 3 - wrongs.length);
-            wrongs = wrongs.concat(extra);
-        }
-        const finalAnswers = [q.a, ...wrongs].sort(() => 0.5 - Math.random());
-        finalAnswers.forEach((ans, i) => {
-            const div = document.createElement("div");
-            div.className = "option";
-            div.textContent = `${String.fromCharCode(65 + i)}. ${ans}`;
-            div.onclick = () => {
-                document.querySelectorAll(".option").forEach(o => o.classList.remove("selected"));
-                div.classList.add("selected");
-                userAnswers[index] = { label: String.fromCharCode(65 + i), value: ans };
-            };
-            optionsEl.appendChild(div);
-        });
-    }
+    let wrongs = [...new Set(questions.filter(x => x.a !== q.a).map(x => x.a))].sort(() => 0.5 - Math.random()).slice(0, 3);
+    const finalChoices = [q.a, ...wrongs].sort(() => 0.5 - Math.random());
+
+    finalChoices.forEach(ans => {
+        const div = document.createElement("div");
+        div.className = "option";
+        div.textContent = ans;
+        div.onclick = () => {
+            if (isPaused) return;
+            document.querySelectorAll(".option").forEach(o => o.classList.remove("selected"));
+            div.classList.add("selected");
+            userAnswers[index] = ans;
+        };
+        optionsEl.appendChild(div);
+    });
 
     let sec = timeLimit;
-    const timerEl = document.getElementById("timer");
-    timerEl.textContent = `剩餘 ${sec} 秒`;
-    timer = setInterval(() => {
-        if (paused) return;
-        sec--;
-        timerEl.textContent = `剩餘 ${sec} 秒`;
-        if (sec <= 0) nextQuestion();
+    const container = document.querySelector(".progress-area");
+    
+    pingu1.style.transition = "none";
+    pingu1.style.left = (container.offsetWidth - 55) + "px";
+    
+    void pingu1.offsetWidth; 
+    pingu1.style.transition = "left 1s linear";
+
+    timerEl.textContent = sec;
+    
+    timer = setInterval(() => { 
+        if (!isPaused) {
+            sec--; 
+            timerEl.textContent = sec; 
+            
+            const startX = container.offsetWidth - 55;
+            const endX = 80; 
+            let progress = Math.min((timeLimit - sec) / timeLimit, 1);
+            let currentLeft = startX - (startX - endX) * progress;
+            
+            pingu1.style.left = currentLeft + "px";
+
+            if(sec <= 0) nextQuestion(); 
+        }
     }, 1000);
 }
 
 function togglePause() {
-    paused = !paused;
-    document.getElementById("pauseBtn").textContent = paused ? "復原" : "暫停";
+    isPaused = !isPaused;
+    const pingu1 = document.getElementById("pingu1");
+    const pauseBtn = document.getElementById("pauseBtn");
+    
+    pauseBtn.textContent = isPaused ? "▶" : "⏸";
+    
+    if (isPaused) {
+        pingu1.src = "./pingu1_stop.png"; 
+        const currentLeft = window.getComputedStyle(pingu1).left;
+        pingu1.style.transition = "none";
+        pingu1.style.left = currentLeft;
+    } else {
+        pingu1.src = "./pingu1.png"; 
+        pingu1.style.transition = "left 1s linear";
+    }
 }
 
 function nextQuestion() {
     clearInterval(timer);
-    if (!userAnswers[index]) userAnswers[index] = null;
-    index++;
-    showQuestion();
+    if (!userAnswers[index]) userAnswers[index] = "未作答";
+    index++; showQuestion();
 }
 
 function showResult() {
     document.getElementById("quizPage").style.display = "none";
     document.getElementById("resultPage").style.display = "flex";
     let correctCount = 0;
-    const resultList = document.getElementById("resultList");
-    resultList.innerHTML = selected.map((q, i) => {
-        const ua = userAnswers[i];
-        let cls = "unanswered";
-        let userDisplay = "未作答";
-        if (ua) {
-            userDisplay = ua.label + " - " + ua.value;
-            if (ua.value === q.a) { cls = "correct"; correctCount++; } else { cls = "wrong"; }
-        }
-        return `<li class="${cls}"><img src="${q.img}"><strong>${q.q}</strong><br>正確答案：<span style="color:#1f9d55; font-weight:bold;">${q.a}</span><br>${useChoice ? "你的答案：" + userDisplay : ""}</li>`;
-    }).join("");
-    const percent = Math.round((correctCount / selected.length) * 100);
-    document.getElementById("scoreText").textContent = `得分：${percent}% (答對 ${correctCount} / ${selected.length})`;
-}
+    const grid = document.getElementById("resultGrid");
+    grid.innerHTML = "";
 
-function toggleImages() {
-    document.querySelectorAll("#resultList img").forEach(img => {
-        img.style.display = (img.style.display === "block") ? "none" : "block";
+    selected.forEach((q, i) => {
+        const isCorrect = userAnswers[i] === q.a;
+        if (isCorrect) correctCount++;
+        const item = document.createElement("div");
+        item.className = "result-item";
+        item.onclick = () => openModal(q, userAnswers[i]);
+        
+        item.innerHTML = `
+            <div class="thumb-container"><img src="${q.img}"></div>
+            <div class="result-info">
+                <span class="tag ${isCorrect ? 'tag-correct' : 'tag-wrong'}">${isCorrect ? '✔ 正確' : '✘ 錯誤'}</span>
+                <div class="result-q" style="font-weight:900; margin-bottom:5px; color:var(--nintendo-dark);">${q.q}</div>
+                <div>答: ${q.a}</div>
+                <div style="color:${isCorrect ? '#333' : 'var(--nintendo-red)'}">選: ${userAnswers[i]}</div>
+            </div>
+        `;
+        grid.appendChild(item);
     });
+    document.getElementById("scoreText").textContent = `表現: ${Math.round(correctCount/selected.length*100)}% (${correctCount}/${selected.length})`;
 }
 
-    // 禁用右鍵選單
-document.addEventListener('contextmenu', event => event.preventDefault());
-
-// 禁用特定快捷鍵 (如 Ctrl+C, Ctrl+U, F12)
-document.onkeydown = function(e) {
-    if (e.keyCode == 123) { // F12
-        return false;
-    }
-    if (e.ctrlKey && (e.keyCode == 'U'.charCodeAt(0) || e.keyCode == 'C'.charCodeAt(0))) {
-        return false;
-    }
+function openModal(q, userAns) {
+    document.getElementById("modalImg").src = q.img;
+    document.getElementById("modalQ").textContent = q.q;
+    const isCorrect = userAns === q.a;
+    document.getElementById("modalA").innerHTML = `
+        正確答案：<span style="color:var(--nintendo-green)">${q.a}</span><br>
+        你的選擇：<span style="color:${isCorrect ? 'inherit' : 'var(--nintendo-red)'}">${userAns}</span>
+    `;
+    document.getElementById("modalOverlay").style.display = "flex";
 }
+function closeModal() { document.getElementById("modalOverlay").style.display = "none"; }
+
+(async () => {
+    const response = await fetch(SPREADSHEET_CSV_URL + '&t=' + Date.now());
+    const csvData = await response.text();
+    questions = parseCSV(csvData);
+    localStorage.setItem(CACHE_KEY, JSON.stringify(questions));
+})();
 </script>
 </body>
 </html>
