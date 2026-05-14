@@ -136,10 +136,11 @@
         animation: pinguWobble 0.7s infinite ease-in-out alternate;
     }
 
-    #pingu2 { left: 5px; z-index: 2; } 
+    #pingu2 { left: 5px; z-index: 2; -webkit-tap-highlight-color: transparent;} 
     #pingu1 { 
         z-index: 3; 
-        transition: left 1s linear; 
+        transition: left 1s linear;
+		-webkit-tap-highlight-color: transparent;
     } 
 
     @keyframes pinguWobble {
