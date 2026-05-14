@@ -278,7 +278,6 @@ function showQuestion() {
         div.className = "option";
         div.textContent = ans;
         div.onclick = () => {
-            if (isPaused) return;
             document.querySelectorAll(".option").forEach(o => o.classList.remove("selected"));
             div.classList.add("selected");
             userAnswers[index] = ans;
