@@ -275,6 +275,16 @@ async function startQuiz() {
     showQuestion();
 }
 
+// 加入標準洗牌演算法，確保隨機性絕對公平且不會遺漏
+function shuffle(array) {
+    let arr = [...array];
+    for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+}
+
 function showQuestion() {
     if (index >= selected.length) return showResult();
     clearInterval(timer);
@@ -288,45 +298,55 @@ function showQuestion() {
     pingu1.src = "./pingu1.png"; 
     
     const q = selected[index];
-    imgEl.src = q.img;
-    textEl.textContent = q.q;
+    
+    // 確保圖片網址去空白後比對更精準
+    const currentImgTrimmed = q.img.trim();
+    
+    document.getElementById("questionImage").src = currentImgTrimmed;
+    document.getElementById("questionText").textContent = q.q;
+    const optionsEl = document.getElementById("options");
     optionsEl.innerHTML = "";
 
-    if (useChoice) {
-        // 1. 找出所有與當前題目「相同圖片」的題目答案
-        let sameImgPool = questions
-            .filter(x => x.img === q.img && x.a !== q.a)
+    // 1. 找出所有與當前題目「相同圖片」且「答案不等於正解」的選項
+    let sameImgPool = questions
+        .filter(x => x.img.trim() === currentImgTrimmed && x.a !== q.a)
+        .map(x => x.a);
+        
+    // 2. 去除重複的答案
+    let uniqueSameImgPool = [...new Set(sameImgPool)];
+
+    // 3. 隨機打亂並抽取最多 3 個錯誤選項
+    let wrongs = shuffle(uniqueSameImgPool).slice(0, 3);
+
+    // 4. 【防呆】如果同圖的不重複選項真的不到 3 個，才從全域補齊
+    if (wrongs.length < 3) {
+        let globalPool = questions
+            .filter(x => x.a !== q.a && !wrongs.includes(x.a))
             .map(x => x.a);
-            
-        // 去除重複的答案
-        sameImgPool = [...new Set(sameImgPool)];
-
-        // 2. 從同圖池中隨機挑選 3 個
-        let wrongs = sameImgPool.sort(() => 0.5 - Math.random()).slice(0, 3);
-
-        // 3. 【防呆】如果同圖的題目不夠多（不足 3 個錯誤選項），則從全域補齊
-        if (wrongs.length < 3) {
-            const globalPool = questions
-                .filter(x => x.a !== q.a && !wrongs.includes(x.a))
-                .map(x => x.a);
-            const extraWrongs = [...new Set(globalPool)]
-                .sort(() => 0.5 - Math.random())
-                .slice(0, 3 - wrongs.length);
-            wrongs = wrongs.concat(extraWrongs);
-        }
-
-        // 4. 合併正確答案並洗牌
-        const answers = [q.a, ...wrongs].sort(() => 0.5 - Math.random());
-
-        answers.forEach((ans, i) => {
-            const div = document.createElement("div");
-            div.className = "option";
-            div.textContent = `${String.fromCharCode(65 + i)}. ${ans}`;
-            div.onclick = () => selectOption(i, ans, div);
-            optionsEl.appendChild(div);
-        });
+        let uniqueGlobalPool = [...new Set(globalPool)];
+        
+        let extraWrongs = shuffle(uniqueGlobalPool).slice(0, 3 - wrongs.length);
+        wrongs = wrongs.concat(extraWrongs);
     }
 
+    // 5. 合併正確答案並最終洗牌
+    const finalChoices = shuffle([q.a, ...wrongs]);
+
+    // 渲染選項
+    finalChoices.forEach((ans) => {
+        const div = document.createElement("div");
+        div.className = "option";
+        div.textContent = ans; 
+        
+        div.onclick = () => {
+            document.querySelectorAll(".option").forEach(o => o.classList.remove("selected"));
+            div.classList.add("selected");
+            userAnswers[index] = ans; 
+        };
+        optionsEl.appendChild(div);
+    });
+
+    // --- 以下為計時器與動畫邏輯 (維持不變) ---
     let sec = timeLimit;
     const container = document.querySelector(".progress-area");
     
