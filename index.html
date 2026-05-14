@@ -121,7 +121,7 @@
     button:active { transform: translate(2px, 2px); box-shadow: 0px 0px 0 var(--nintendo-dark); }
     .btn-red { background: var(--nintendo-red); color: #fff; }
     .btn-green { background: var(--nintendo-green); color: #fff; }
-    .btn-yellow { background: var(--nintendo-yellow); color: var(--nintendo-dark); min-width: 55px; }
+    .btn-yellow { background: var(--nintendo-yellow); color: var(--nintendo-dark); width: 25px; }
 
     #resultGrid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 20px; justify-content: center; justify-items: center; }
     @media (min-width: 650px) { #resultGrid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); } }
@@ -236,7 +236,7 @@ function showQuestion() {
     const pauseBtn = document.getElementById("pauseBtn");
     const timerEl = document.getElementById("timer");
     
-    pauseBtn.textContent = "⏸";
+    pauseBtn.textContent = "暫停";
     pingu1.src = "./pingu1.png"; 
     
     const q = selected[index];
@@ -294,7 +294,7 @@ function togglePause() {
     const pingu1 = document.getElementById("pingu1");
     const pauseBtn = document.getElementById("pauseBtn");
     
-    pauseBtn.textContent = isPaused ? "▶" : "⏸";
+    pauseBtn.textContent = isPaused ? "繼續" : "暫停";
     
     if (isPaused) {
         pingu1.src = "./pingu1_stop.png"; 
