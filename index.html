@@ -361,7 +361,7 @@ function showQuestion() {
     timer = setInterval(() => { 
         if (!isPaused) {
             sec--; 
-            timerEl.textContent = sec; 
+            timerEl.textContent = sec +"s";
             
             const startX = container.offsetWidth - 55;
             const endX = 20; 
