@@ -55,13 +55,38 @@
     .question { margin: 15px 0; font-size: clamp(1.1rem, 4vw, 1.5rem); font-weight: 900; text-align: center; }
 
     .options { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
-    .option { 
-        padding: 14px 10px; border-radius: 18px; background: #fff; cursor: pointer; 
-        font-size: 1.05rem; font-weight: 700; border: var(--border-thick); 
-        text-align: center; box-shadow: 0 5px 0 var(--nintendo-dark); transition: 0.2s; 
+    /* 1. 移除手機預設點擊高亮顏色 */
+.option { 
+    padding: 14px 10px; 
+    border-radius: 18px; 
+    background: #fff; 
+    cursor: pointer; 
+    font-size: 1.05rem; 
+    font-weight: 700; 
+    border: var(--border-thick); 
+    text-align: center; 
+    box-shadow: 0 5px 0 var(--nintendo-dark); 
+    transition: 0.2s; 
+    
+    /* 關鍵：禁用手機點擊時的預設陰影 */
+    -webkit-tap-highlight-color: transparent; 
+}
+
+/* 2. 修正：只有在真正的滑鼠懸停時才變黃色，避免手機點擊變黃 */
+@media (hover: hover) {
+    .option:hover { 
+        background: var(--nintendo-yellow); 
+        transform: translateY(-3px); 
     }
-    .option:hover { background: var(--nintendo-yellow); transform: translateY(-3px); }
-    .option.selected { background: var(--nintendo-blue) !important; color: #fff; }
+}
+
+/* 3. 選中狀態增加 !important 確保覆蓋所有背景設定 */
+.option.selected { 
+    background: var(--nintendo-blue) !important; 
+    color: #fff !important; 
+    transform: translateY(2px);
+    box-shadow: 0 2px 0 var(--nintendo-dark);
+}
 
     /* --- 控制列與進度條佈局 --- */
     .control { 
