@@ -162,7 +162,25 @@
     .modal-content img { max-width: 100%; max-height: 40vh; border-radius: 15px; display: block; margin: 0 auto 10px; border: 2px solid #eee; }
 
 	/* 更新按鈕樣式 */
-    .update-btn { position: fixed; bottom: 20px; left: 20px; background: #fff; padding: 10px 15px; border-radius: 50px; border: 3px solid var(--nintendo-dark); font-weight: 900; font-size: 0.8rem; z-index: 100; }
+    .update-btn {
+        position: fixed;
+        bottom: 20px;
+        left: 20px;
+        background: #fff;
+        color: #667085;
+        border: 1px solid #d0d5dd;
+        padding: 8px 12px;
+        font-size: 0.85rem;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        transition: all 0.2s;
+    }
+    .update-btn:hover { background: #f9fafb; color: #344054; }
+    .update-btn.loading svg { animation: spin 1s linear infinite; }
+    @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 </style>
 </style>
 </head>
