@@ -288,25 +288,44 @@ function showQuestion() {
     pingu1.src = "./pingu1.png"; 
     
     const q = selected[index];
-    document.getElementById("questionImage").src = q.img;
-    document.getElementById("questionText").textContent = q.q;
-    const optionsEl = document.getElementById("options");
+    imgEl.src = q.img;
+    textEl.textContent = q.q;
     optionsEl.innerHTML = "";
 
-    let wrongs = [...new Set(questions.filter(x => x.a !== q.a).map(x => x.a))].sort(() => 0.5 - Math.random()).slice(0, 3);
-    const finalChoices = [q.a, ...wrongs].sort(() => 0.5 - Math.random());
+    if (useChoice) {
+        // 1. 找出所有與當前題目「相同圖片」的題目答案
+        let sameImgPool = questions
+            .filter(x => x.img === q.img && x.a !== q.a)
+            .map(x => x.a);
+            
+        // 去除重複的答案
+        sameImgPool = [...new Set(sameImgPool)];
 
-    finalChoices.forEach(ans => {
-        const div = document.createElement("div");
-        div.className = "option";
-        div.textContent = ans;
-        div.onclick = () => {
-            document.querySelectorAll(".option").forEach(o => o.classList.remove("selected"));
-            div.classList.add("selected");
-            userAnswers[index] = ans;
-        };
-        optionsEl.appendChild(div);
-    });
+        // 2. 從同圖池中隨機挑選 3 個
+        let wrongs = sameImgPool.sort(() => 0.5 - Math.random()).slice(0, 3);
+
+        // 3. 【防呆】如果同圖的題目不夠多（不足 3 個錯誤選項），則從全域補齊
+        if (wrongs.length < 3) {
+            const globalPool = questions
+                .filter(x => x.a !== q.a && !wrongs.includes(x.a))
+                .map(x => x.a);
+            const extraWrongs = [...new Set(globalPool)]
+                .sort(() => 0.5 - Math.random())
+                .slice(0, 3 - wrongs.length);
+            wrongs = wrongs.concat(extraWrongs);
+        }
+
+        // 4. 合併正確答案並洗牌
+        const answers = [q.a, ...wrongs].sort(() => 0.5 - Math.random());
+
+        answers.forEach((ans, i) => {
+            const div = document.createElement("div");
+            div.className = "option";
+            div.textContent = `${String.fromCharCode(65 + i)}. ${ans}`;
+            div.onclick = () => selectOption(i, ans, div);
+            optionsEl.appendChild(div);
+        });
+    }
 
     let sec = timeLimit;
     const container = document.querySelector(".progress-area");
