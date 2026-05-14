@@ -32,7 +32,7 @@
 
     .quiz-container{
         width: 95%; max-width: 900px; background: #fff; border-radius: 30px; 
-        border: var(--border-thick); padding: 25px; box-shadow: 12px 12px 0px var(--nintendo-dark);
+        border: var(--border-thick); padding: 15px 15px 15px 15px; box-shadow: 12px 12px 0px var(--nintendo-dark);
         position: relative; box-sizing: border-box; margin: 20px 20px 20px 10px;
         animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     }
@@ -121,7 +121,7 @@
     button:active { transform: translate(2px, 2px); box-shadow: 0px 0px 0 var(--nintendo-dark); }
     .btn-red { background: var(--nintendo-red); color: #fff; }
     .btn-green { background: var(--nintendo-green); color: #fff; }
-    .btn-yellow { background: var(--nintendo-yellow); color: var(--nintendo-dark); width: 25px; }
+    .btn-yellow { background: var(--nintendo-yellow); color: var(--nintendo-dark); min-width: 55px; }
 
     #resultGrid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 20px; justify-content: center; justify-items: center; }
     @media (min-width: 650px) { #resultGrid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); } }
